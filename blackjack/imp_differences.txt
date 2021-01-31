@@ -1,0 +1,18 @@
+##############################
+## MC-Poker ## MC-Poker-Phil #
+##############################
+Don't use dictionaries
+Don't use First Visit MC
+Phil uses gym instead (I coded the blackjack)
+(Phil) No coding for ace wrap?
+
+Phil appends all values to 1 'experience array'
+Then adds the mean of values to self.V
+V, returns and states visited are all dictionaries of states (can easily search key)
+Uses the standard observation, observation_ examples
+Uses discounting & standard rewards
+
+## Issues with MC-Poker-Phil
+Doesn't deal with the control of the agent (since only has state-value function)
+  (without a model, we don't know how to transition to the next most valuable state since we don't know what the next most valuable state is)
+Also need to deal with explore-exploit dilemma (since need stochastic policy, not deterministic)
