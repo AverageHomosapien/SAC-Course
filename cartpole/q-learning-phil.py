@@ -12,7 +12,7 @@ class Agent():
         self.n_actions = n_actions
 
         self.state_space = state_space
-        self.actions = [i for i in range(self.n_actions)]
+        self.action_space = [i for i in range(self.n_actions)]
 
         self.Q = {}
         self.init_Q()
@@ -20,7 +20,7 @@ class Agent():
     def init_Q(self):
         for state in self.state_space:
             for action in self.action_space:
-                self.Q[(states, self.actions)] = 0.0
+                self.Q[(state, action)] = 0.0
 
     def max_action(self, state):
         actions = np.array([self.Q[(state, a)] for a in self.action_space])
@@ -70,9 +70,41 @@ class CartPoleStateDigitizer():
         pole_theta = int(np.digitize(theta, self.pole_angle_space))
         pole_thetadot = int(np.digitize(theta_dot, self.pole_velocity_space))
 
-        return (cart_x,, cart_xdot, pole_theta, pole_thetadot)
+        return (cart_x, cart_xdot, pole_theta, pole_thetadot)
 
 def plot_learning_curve(scores, x):
-    
+    running_avg = np.zeros(len(scores))
+    for i in range(len(running_avg)):
+        running_avg[i] = np.mean(scores[max(0, i-100):(i+1)])
+    plt.plot(x, running_avg)
+    plt.title('Running average of previous 100 scores')
+    plt.show()
 
 if __name__ == "__main__":
+    env = gym.make('CartPole-v1')
+    n_games = 50000
+    eps_dec = 2/n_games
+    digitizer = CartPoleStateDigitizer()
+    agent = Agent(lr=0.01, gamma=0.99, n_actions=2, eps_start=1.0, eps_end=0.01,
+                    eps_dec=eps_dec, state_space=digitizer.states)
+
+    scores = []
+    for i in range(n_games):
+        observation = env.reset()
+        done = False
+        score = 0
+        state = digitizer.digitize(observation)
+        while not done:
+            action = agent.choose_action(state)
+            observation_, reward, done, info = env.step(action)
+            state_ = digitizer.digitize(observation_)
+            agent.learn(state, action, reward, state_)
+            state = state_
+            score += reward
+
+        if i % 5000 == 0:
+            print("episode {}, score {}, epsilon {}".format(i, score, agent.epsilon))
+        agent.decrement_epsilon()
+        scores.append(score)
+    x = [i+1 for i in range(n_games)]
+    plot_learning_curve(scores, x)
