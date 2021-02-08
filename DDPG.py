@@ -6,7 +6,7 @@ import torch as T
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from utils_phil import ReplayBuffer, OUActionNoise, plot_learning_curve
+from utils import ReplayBuffer, OUActionNoise, plot_learning_curve
 
 class CriticNetwork(nn.Module):
     def __init__(self, beta, input_dims, fc1_dims, fc2_dims, n_actions, name,
