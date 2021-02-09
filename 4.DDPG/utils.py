@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from collections import deque
 
-class OUActionNoise(ActionNoise):
+class OUActionNoise():
     def __init__(self, mu, sigma=0.15, theta=0.2, dt=1e-2, x0=None):
         self.theta = theta
         self.mu = mu
@@ -12,43 +11,55 @@ class OUActionNoise(ActionNoise):
         self.reset()
 
     def __call__(self):
+        # Can be called like:
         # noise = OUActionNoise()
         # current_noise = noise()
-        x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt +
+        x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + \
             self.sigma * np.sqrt(self.dt) * np.random.normal(size=self.mu.shape)
         self.x_prev = x
         return x
 
     def reset(self):
-        self.x_prev = self.x0 if self.x0 if not None else np.zeros_like(self.mu)
+        self.x_prev = self.x0 if self.x0 is not None else np.zeros_like(self.mu)
 
 
 class ReplayBuffer():
-    def __init__(self, min_sample=200, max_size=10e6, minibatch_size=32, initial_state = None):
-        self.queue = deque() if initial_state == None else deque([initial_state])
-        self.max_size = max_size
-        self.minibatch_size = minibatch_size
+    def __init__(self, max_size, input_shape, n_actions, batch_size=32):
+        self.batch_size = 32
+        self.mem_size = max_size
+        self.mem_cntr = 0
+        self.state_memory = np.zeros((self.mem_size, *input_shape))
+        self.new_state_memory = np.zeros((self.mem_size, *input_shape))
+        self.action_memory = np.zeros((self.mem_size, n_actions))
+        self.reward_memory = np.zeros(self.mem_size)
+        self.terminal_memory = np.zeros(self.mem_size, dtype=np.bool)
 
-    def store_transition(self, observation):
-        if self.is_full():
-            self.queue.popleft()
-        self.queue.append(observation)
+    def store_transition(self, state, action, reward, state_, done):
+        index = self.mem_cntr % self.mem_size
+        self.state_memory[index] = state
+        self.action_memory[index] = action
+        self.reward_memory[index] = reward
+        self.new_state_memory[index] = state_
+        self.terminal_memory[index] = done
 
-    def is_full(self):
-        if len(self.queue) >= max_size:
-            return True
-        return False
+        self.mem_cntr += 1
 
-    # the only reason I can see memory attributes stored seperately is for the calculation
-    # .. since if doing specific calculation in batch, and tuples stored together,
-    # .. all tuples will need unpacked
-    def sample(self, minibatch_size):
-        if len(self.queue) < min_sample:
-            return []
-        return np.random.choice(self.queue, size=self.minibatch_size)
+    def sample_buffer(self, batch_size):
+        # If mem_cntr > mem_size then return max_mem size, or mem_cntr so that it doesn't overflow
+        max_mem = min(self.mem_cntr, self.mem_size)
+
+        batch = np.random.choice(max_mem, batch_size)
+
+        states = self.state_memory[batch]
+        actions = self.action_memory[batch]
+        rewards = self.reward_memory[batch]
+        states_ = self.new_state_memory[batch]
+        dones = self.terminal_memory[batch]
+
+        return states, actions, rewards, states_, dones
 
 
-def plot_learning_curve(scores, x, figure_file):
+def plot_learning_curve(x, scores, figure_file):
     running_avg = np.zeros(len(scores))
     for i in range(len(running_avg)):
         running_avg[i] = np.mean(scores[max(0, i-100):(i+1)])
