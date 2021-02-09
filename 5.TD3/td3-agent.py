@@ -88,14 +88,15 @@ def ActorNetwork(nn.Module):
         T.load_state_dict(T.load(self.checkpoint_file))
 
 
-class Agent(object):
+class Agent():
     # needs functions init, choose_action, store_transition
     def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, alpha, beta,
-                batch_size=100, max_size=1e6, mu=0, sigma=0.1):
+                batch_size=100, max_size=1e6, mu=0, sigma=0.1, clip=0.5):
         self.input_dims = input_dims
         self.n_actions = n_actions
         self.alpha = alpha
         self.beta = beta
+        self.clip = clip
 
         self.batch_size = batch_size
         self.max_size = max_size
@@ -107,8 +108,19 @@ class Agent(object):
         self.target_critic = CriticNetwork(beta, input_dims, fc1_dims, fc2_dims, n_actions, 'target_critic')
         self.memory = ReplayBuffer(self.max_size, input_dims, n_actions, batch_size=self.batch_size)
 
-    def choose_action(self, state):
+    def choose_action(self, observation):
+        self.actor.eval()
+        state = T.Tensor([observation], dtype=T.float).to(self.device)
+        mu = self.actor.forward(state).to(self.actor.device)
+        mu_prime = mu + T.Tensor(self.noise(), dtype=T.float).to(self.actor.device)
+        mu_prime = np.min(self.clip, mu_prime)
+        mu_prime = np.max(self.clip, mu_prime)
+        self.actor.train()
 
+        return mu_prime.cpu().detach().numpy()[0]
+
+    def remember(self, state, action, reward, state_, done):
+        self.memory.store_transition(state, action, reward, state_, done)
 
 
 

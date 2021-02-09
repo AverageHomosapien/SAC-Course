@@ -93,8 +93,11 @@ class Agent():
             layer2_size=300, batch_size=100, noise=0.1):
         self.gamma = gamma
         self.tau = tau
-        self.max_action = env.action_space.high
-        self.min_action = env.action_space.low
+        #self.max_action = env.action_space.high
+        #self.min_action = env.action_space.low
+        self.max_action = n_actions
+        self.min_action = 0
+
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)
         self.batch_size = batch_size
         self.learn_step_cntr = 0
@@ -135,7 +138,8 @@ class Agent():
         mu_prime = mu + T.tensor(np.random.normal(scale=self.noise),
                                     dtype=T.float).to(self.actor.device)
 
-        mu_prime = T.clamp(mu_prime, self.min_action[0], self.max_action[0])
+        #mu_prime = T.clamp(mu_prime, self.min_action[0], self.max_action[0])
+        mu_prime = T.clamp(mu_prime, self.min_action, self.max_action)
         self.time_step += 1
 
         return mu_prime.cpu().detach().numpy()

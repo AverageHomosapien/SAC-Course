@@ -26,7 +26,7 @@ class OUActionNoise():
 class ReplayBuffer():
     def __init__(self, max_size, input_shape, n_actions, batch_size=32):
         self.batch_size = 32
-        self.mem_size = max_size
+        self.mem_size = int(max_size)
         self.mem_cntr = 0
         self.state_memory = np.zeros((self.mem_size, *input_shape))
         self.new_state_memory = np.zeros((self.mem_size, *input_shape))
