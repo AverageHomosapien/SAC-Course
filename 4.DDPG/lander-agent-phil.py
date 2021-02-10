@@ -256,6 +256,8 @@ if __name__ == "__main__":
     best_score = env.reward_range[0]
     score_history = []
 
+    #agent.load_models()
+
     for i in range(n_games):
         observation = env.reset()
         done = False

@@ -94,10 +94,10 @@ class Agent():
                 layer1_size=400, layer2_size=300, batch_size=100, noise=0.1):
         self.gamma = gamma
         self.tau = tau
-        #self.max_action = env.action_space.high
-        #self.min_action = env.action_space.low
-        self.max_action = n_actions
-        self.min_action = 0
+        self.max_action = env.action_space.high
+        self.min_action = env.action_space.low
+        #self.max_action = n_actions
+        #self.min_action = 0
 
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)
         self.batch_size = batch_size
@@ -120,19 +120,16 @@ class Agent():
 
     def choose_action(self, observation):
         if self.time_step < self.warmup:
-            mu = T.Tensor(np.random.normal(scale=self.noise, size=(self.n_actions, )))
+            mu = T.tensor(np.random.normal(scale=self.noise, size=(self.n_actions, ))).to(self.actor.device)
         else:
-            #state = T.Tensor([observation], dtype=T.float).to(self.device)
-            state = T.Tensor(observation, dtype=T.float).to(self.device)
+            state = T.tensor(observation, dtype=T.float).to(self.actor.device)
             mu = self.actor.forward(state).to(self.actor.device)
-        #mu_prime = mu + T.Tensor(np.random.normal(scale=self.noise)).to(self.actor.device)
-        mu_prime = mu + T.Tensor(np.random.normal(scale=self.noise),
-                                dtype=T.float).to(self.actor.device)
+
+        mu_prime = mu + T.tensor(np.random.normal(scale=self.noise), dtype=T.float).to(self.actor.device)
         # clamping on action to make sure it stays in range
-        #mu_prime = T.clamp(mu_prime, self.min_action[0], self.max_action[0])
-        mu_prime = T.clamp(mu_prime, self.min_action, self.max_action)
+        mu_prime = T.clamp(mu_prime, self.min_action[0], self.max_action[0])
         self.time_step += 1
-        return mu_prime.cpu.detatch.numpy()
+        return mu_prime.cpu().detach().numpy()
 
     def remember(self, state, action, reward, state_, done):
         self.memory.store_transition(state, action, reward, state_, done)
@@ -142,14 +139,15 @@ class Agent():
             return
         state, action, reward, state_, done = self.memory.sample_buffer(self.batch_size)
 
-        state = T.Tensor(state, dtype=T.float).to(self.critic_1.device)
-        action = T.Tensor(action, dtype=T.float).to(self.critic_1.device)
-        reward = T.Tensor(reward, dtype=T.float).to(self.critic_1.device)
-        state_ = T.Tensor(state_, dtype=T.float).to(self.critic_1.device)
-        done = T.Tensor(done).to(self.critic_1.device)
+        state = T.tensor(state, dtype=T.float).to(self.critic_1.device)
+        action = T.tensor(action, dtype=T.float).to(self.critic_1.device)
+        reward = T.tensor(reward, dtype=T.float).to(self.critic_1.device)
+        state_ = T.tensor(state_, dtype=T.float).to(self.critic_1.device)
+        done = T.tensor(done).to(self.critic_1.device)
 
-        target_actions = self.actor.forward(states_) # get the new states
+        target_actions = self.actor.forward(state_) # get the new states
         target_actions = target_actions + T.clamp(T.tensor(np.random.normal(scale=0.2)), -0.5, 0.5) # add noise
+        #target_actions = T.clamp(target_actions, self.min_action[0], self.max_action[0])
         target_actions = T.clamp(target_actions, self.min_action[0], self.max_action[0])
         # clamp to ensure target action in bounds of environment () - may break if -ve element != -(+ve) element
 
@@ -253,11 +251,11 @@ class Agent():
 
 
 if __name__ == '__main__':
-    env = gym.make('LunarLander-v2')
+    env = gym.make('LunarLanderContinuous-v2')
     agent = Agent(alpha=0.001, beta=0.001, input_dims=env.observation_space.shape,
                 tau=0.005, env=env, batch_size=100, layer1_size=400, layer2_size=300,
-                n_actions=env.action_space.__dict__['n'])
-    n_games = 1000
+                n_actions=env.action_space.shape[0]) # 2 actions for lunar lander
+    n_games = 2000
     filename = 'LunarLander_' + str(n_games) + '.png'
     figure_file = 'plots/' + filename
 
@@ -282,7 +280,7 @@ if __name__ == '__main__':
 
         if avg_score > best_score:
             best_score = avg_score
-            agent.save_models()
+            agent.save_model()
         print('episode {} score {} trailing 100 games avg {}'.format(i, round(score, 2), round(avg_score, 3)))
 
     x = [i+1 for i in range(n_games)]
