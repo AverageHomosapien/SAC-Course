@@ -1,5 +1,6 @@
 import gym
 import os
+import datetime
 import numpy as np
 import torch as T
 import torch.optim as optim
@@ -39,11 +40,9 @@ class CriticNetwork(nn.Module):
         return s_a_value
 
     def save_checkpoint(self):
-        print("..saving checkpoint")
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        print("..loading checkpoint")
         T.load_state_dict(T.load(self.checkpoint_file))
 
 
@@ -79,11 +78,9 @@ class ActorNetwork(nn.Module):
         return x
 
     def save_checkpoint(self):
-        print("..saving checkpoint")
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        print("..loading checkpoint")
         T.load_state_dict(T.load(self.checkpoint_file))
 
 
@@ -250,19 +247,23 @@ class Agent():
         self.target_critic_2.load_checkpoint()
 
 
+LOAD_EXISTING = False
+
 if __name__ == '__main__':
     env = gym.make('LunarLanderContinuous-v2')
     agent = Agent(alpha=0.001, beta=0.001, input_dims=env.observation_space.shape,
                 tau=0.005, env=env, batch_size=100, layer1_size=400, layer2_size=300,
                 n_actions=env.action_space.shape[0]) # 2 actions for lunar lander
     n_games = 2000
-    filename = 'LunarLander_' + str(n_games) + '.png'
-    figure_file = 'plots/' + filename
+    filename = 'LunarLander_' + str(n_games) + "_"
+    figure_file = 'plots/' + filename + str(datetime.datetime.now().microsecond) + '.png'
 
     best_score = env.reward_range[0]
     score_history = []
 
-    #agent.load_models()
+    if LOAD_EXISTING:
+        agent.load_models()
+        print("... loading checkpoint")
 
     for i in range(n_games):
         observation = env.reset()
@@ -279,6 +280,7 @@ if __name__ == '__main__':
         avg_score = np.mean(score_history[-100:])
 
         if avg_score > best_score:
+            print("... saving checkpoint")
             best_score = avg_score
             agent.save_model()
         print('episode {} score {} trailing 100 games avg {}'.format(i, round(score, 2), round(avg_score, 3)))

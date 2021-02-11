@@ -67,11 +67,9 @@ class CriticNetwork(nn.Module):
         return state_action_value
 
     def save_checkpoint(self):
-        print("... saving checkpoint")
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        print("... loading checkpoint")
         T.load_state_dict(T.load(self.checkpoint_file))
 
 
@@ -129,11 +127,9 @@ class ActorNetwork(nn.Module):
 
 
     def save_checkpoint(self):
-        print("... saving checkpoint")
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        print("... loading checkpoint")
         T.load_state_dict(T.load(self.checkpoint_file))
 
 
@@ -243,6 +239,9 @@ class Agent():
         #self.target_critic.load_state_dict(critic_state_dict, strict=False)
         #self.target_actor.load_state_dict(actor_state_dict, strict=False)
 
+
+LOAD_EXISTING = False
+
 if __name__ == "__main__":
     env = gym.make('LunarLanderContinuous-v2')
     agent = Agent(alpha=0.0001, beta=0.001, input_dims=env.observation_space.shape,
@@ -256,7 +255,9 @@ if __name__ == "__main__":
     best_score = env.reward_range[0]
     score_history = []
 
-    #agent.load_models()
+    if LOAD_EXISTING:
+        agent.load_models()
+        print("... loading checkpoint")
 
     for i in range(n_games):
         observation = env.reset()
@@ -274,6 +275,7 @@ if __name__ == "__main__":
         avg_score = np.mean(score_history[-100:])
 
         if avg_score > best_score:
+            print("... saving checkpoint")
             best_score = avg_score
             agent.save_models()
 
