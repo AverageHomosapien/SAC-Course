@@ -1,3 +1,4 @@
+import pybullet_envs
 import gym
 import numpy as np
 import torch as T
@@ -127,8 +128,8 @@ class Agent():
         self.target_v = ValueNetwork(beta, input_dims, fc1_dims, fc2_dims, 'target_value_net')
 
 
-    def choose_action():
-
+    def choose_action(self, state):
+        state = T.tensor([observation]).to(self.actor.device)
 
     def store_transition(self, state, action, reward, state_, done):
         self.memory.store_transition(state, action, reward, state_, done)
@@ -178,3 +179,118 @@ class Agent():
         self.q2.load_checkpoint()
         self.v.load_checkpoint()
         self.target_v.load_checkpoint()
+
+    def learn(self):
+        if self.memory.mem_cntr < self.batch_size:
+            return
+
+        state, action, reward, new_state, done = self.memory.sample_buffer(self.batch_size)
+
+        state = T.tensor(state, dtype=T.float).to(self.critic_1.device)
+        action = T.tensor(action, dtype=T.float).to(self.critic_1.device)
+        reward = T.tensor(reward, dtype=T.float).to(self.critic_1.device)
+        state_ = T.tensor(state_, dtype=T.float).to(self.critic_1.device)
+        done = T.tensor(done).to(self.critic_1.device)
+
+        # passing states and new states through value and target value networks
+        # collapsing along batch dimension since we don't need 2d tensor for scalar quantities
+        value = self.value(state).view(-1)
+        value_ = self.target_value(state_).view(-1)
+        value_[done] = 0.0 # setting terminal states to 0
+
+        # pass current states through current policy get action & log prob values
+        actions, log_probs = self.actor.sample_normal(state, reparameterize=False)
+        log_probs = log_probs.view(-1)
+        # critic values for current policy state action pairs
+        q1_new_policy = self.critic_1.forward(state, actions)
+        q2_new_policy = self.critic_2.forward(state, actions)
+        # take critic min and collapse
+        critic_value = T.min(q1_new_policy, q2_new_policy)
+        critic_value = critic_value.view(-1)
+
+        self.value.optimizer.zero_grad()
+        value_target = critic_value - log_probs
+        value_loss = 0.5 * F.mse_loss(value, value_target)
+        value_loss.backward(retain_graph=True)
+        self.value.optimizer.step()
+
+        # actor loss (using reparam trick)
+        actions, log_probs = self.actor.sample_normal(state, reparameterize=True)
+        log_probs = log_probs.view(-1)
+        # take critic min for new policy and collapse
+        q1_new_policy = self.critic_1.forward(state, action)
+        q2_new_policy = self.critic_2.forward(state, action)
+        critic_value = T.min(q1_new_policy, q2_new_policy)
+        critic_value = critic_value.view(-1)
+
+        # calculating actor loss
+        actor_loss = log_probs - critic_value
+        actor_loss = T.mean(actor_loss)
+        self.actor.optimizer.zero_grad()
+        actor_loss.backward(retain_graph=True)
+        self.actor.optimizer.step()
+
+        q_hat = self.scale * reward + self.gamma*value_ # qhat
+        q1_old_policy = self.critic_1.forward(state, action).view(-1) # old policy (from replay buffer)
+        q2_old_policy = self.critic_2.forward(state, action).view(-1)
+        critic_1_loss = 0.5 * F.mse_loss(q1_old_policy, q_hat)
+        critic_2_loss = 0.5 * F.mse_loss(q2_old_policy, q_hat)
+
+        self.critic_1.optimizer.zero_grad()
+        self.critic_2.optimizer.zero_grad()
+        critic_loss = critic_1_loss + critic_2_loss
+        critic_loss.backward()
+        self.critic_1.optimizer.step()
+        self.critic_2.optimizer.step()
+
+        self.update_network_parameters()
+
+# environments with large negative rewards don't work
+# pybullet package looks good
+
+if __name__ == '__main__':
+    env_id = 'LunarLanderContinuous-v2'
+    env = gym.make(env_id)
+    agent = Agent(alpha=0.003, beta=0.003, reward_scale=2, env_id=env_id,
+                input_dims=env.observation_space.shape, tau=0.005,
+                env=env, batch_size=256, layer1_size=256, layer2_size=256,
+                n_actions=env.action_space.shape[0])
+    n_games = 1000
+    filename = env_id+'_'+str(n_games)+'games_scale'+str(agent.scale)+'.png'
+    figure_file = 'plots/' + filename
+
+    best_score = env.reward_range[0]
+    score_history = []
+    load_checkpoint = False
+
+    if load_checkpoint:
+        agent.load_models()
+        env.render(mode='human')
+
+    steps = 0
+    for i in range(n_games):
+        score = 0
+        done = False
+        observation = env.reset()
+        while not done:
+            action = agent.choose_action(observation)
+            observation_, reward, done, info = env.step(action)
+            steps += 1
+            score += reward
+            agent.remember(observation, action, reward, observation_, done)
+            if not load_checkpoint:
+                agent.learn()
+            observation = observation_
+        score_history.append(score)
+        avg_score = np.mean(score_history[-100:])
+
+        if avg_score > best_score:
+            best_score = avg_score
+            if not load_checkpoint:
+                agent.save_models()
+
+        print('episode {} score {} trailing 100 games avg {} steps {} env {}'.format(
+            episode, score, avg_score, steps, env_id))
+    if not load_checkpoint:
+        x = [i+1 for i in range(n_games)]
+        plot_learning_curve(x, score_history, figure_file)
