@@ -4,7 +4,7 @@ import torch as T
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from utils import ReplayBuffer
+from utils import ReplayBuffer, plot_learning_curve
 
 class DeepQNetwork(nn.Module):
     def __init__(self, lr, input_dims, fc1_dims, fc2_dims, n_actions):
@@ -25,7 +25,7 @@ class DeepQNetwork(nn.Module):
         actions = self.q(x)
         return actions
 
-class Agent():
+class DQNAgent():
     def __init__(self, gamma, epsilon, lr, input_dims, batch_size, n_actions,
                 max_mem_size=1000000, eps_end = 0.01, eps_dec=5e-4,
                 fc1_dims=256, fc2_dims=256):
@@ -62,12 +62,14 @@ class Agent():
 
         batch_index = np.arange(self.batch_size, dtype=np.int32)
         states = T.tensor(states, dtype=T.float).to(self.network.device)
-        actions = T.tensor(actions, dtype=T.float).to(self.network.device)
+        #actions = T.tensor(actions, dtype=T.float).to(self.network.device)
+        actions = [i[0] for i in actions]
+        actions = np.array(actions)
         rewards = T.tensor(rewards, dtype=T.float).to(self.network.device)
         states_ = T.tensor(states_, dtype=T.float).to(self.network.device)
         dones = T.tensor(dones).to(self.network.device)
 
-        q_eval = self.network.forward(states)#[batch_index, actions]
+        q_eval = self.network.forward(states)[batch_index, actions]
         q_next = self.network.forward(states_)
         q_next[dones] = 0.0
 
@@ -82,7 +84,7 @@ class Agent():
 
 if __name__ == '__main__':
     env = gym.make('LunarLander-v2')
-    agent = Agent(gamma=0.99, epsilon=1.0, batch_size=64, n_actions=4,
+    agent = DQNAgent(gamma=0.99, epsilon=1.0, batch_size=64, n_actions=4,
                 eps_end=0.01, input_dims=[8], lr=0.03) # cartpole n_actions=2, input_dims=[4]
     scores, eps_history = [], []
     n_games = 1000

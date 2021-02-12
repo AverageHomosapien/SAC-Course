@@ -148,7 +148,7 @@ class ValueNetwork(nn.Module):
         T.load_state_dict(T.load(self.checkpoint_file))
 
 
-class Agent():
+class SACAgent():
     def __init__(self, alpha, beta, tau, env, env_id, input_dims, gamma=0.99, n_actions=2,
                 max_size=1e6, layer1_size=256, layer2_size=256, batch_size=100,
                 reward_scale=2):
@@ -227,7 +227,7 @@ class Agent():
         reward = T.tensor(reward, dtype=T.float).to(self.actor.device)
         state_ = T.tensor(new_state, dtype=T.float).to(self.actor.device)
         done = T.tensor(done).to(self.actor.device)
-        
+
         # passing states and new states through value and target value networks
         # collapsing along batch dimension since we don't need 2d tensor for scalar quantities
         value = self.value(state).view(-1)
@@ -287,7 +287,7 @@ class Agent():
 if __name__ == '__main__':
     env_id = 'LunarLanderContinuous-v2'
     env = gym.make(env_id)
-    agent = Agent(alpha=0.003, beta=0.003, reward_scale=2, env_id=env_id,
+    agent = SACAgent(alpha=0.003, beta=0.003, reward_scale=2, env_id=env_id,
                 input_dims=env.observation_space.shape, tau=0.005,
                 env=env, batch_size=256, layer1_size=256, layer2_size=256,
                 n_actions=env.action_space.shape[0])

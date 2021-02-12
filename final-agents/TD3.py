@@ -86,7 +86,7 @@ class ActorNetwork(nn.Module):
         self.load_state_dict(T.load(self.checkpoint_file))
 
 
-class Agent():
+class TD3Agent():
     def __init__(self, alpha, beta, input_dims, tau, env,
             gamma=0.99, update_actor_interval=2, warmup=1000,
             n_actions=2, max_size=1000000, layer1_size=400,
@@ -256,19 +256,28 @@ class Agent():
         self.target_critic_2.load_checkpoint()
 
 
+
 if __name__ == '__main__':
-    env = gym.make('LunarLanderContinuous-v2')
-    agent = Agent(alpha=0.001, beta=0.001,
+    td3_run()
+
+
+def td3_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
+    env = gym.make(env_id)
+    n_games = total_games
+    load_checkpoint = test_model
+
+    agent = TD3Agent(alpha=0.001, beta=0.001,
             input_dims=env.observation_space.shape, tau=0.005,
             env=env, batch_size=100, layer1_size=400, layer2_size=300,
             n_actions=env.action_space.shape[0])
-    n_games = 1000
-    filename = 'plots/' + 'LunarLanderContinuous_' + str(n_games) + '_games.png'
+    filename = 'plots/' + env_id + str(n_games) + '_games.png'
 
     best_score = env.reward_range[0]
     score_history = []
 
-    #agent.load_models()
+    if load_checkpoint:
+        agent.load_models()
+        env.render(mode='human')
 
     for i in range(n_games):
         observation = env.reset()
@@ -278,7 +287,8 @@ if __name__ == '__main__':
             action = agent.choose_action(observation)
             observation_, reward, done, info = env.step(action)
             agent.remember(observation, action, reward, observation_, done)
-            agent.learn()
+            if not load_checkpoint:
+                agent.learn()
             score += reward
             observation = observation_
         score_history.append(score)
@@ -286,10 +296,12 @@ if __name__ == '__main__':
 
         if avg_score > best_score:
             best_score = avg_score
-            agent.save_models()
+            if not load_checkpoint:
+                agent.save_models()
 
         print('episode ', i, 'score %.1f' % score,
                 'average score %.1f' % avg_score)
 
-    x = [i+1 for i in range(n_games)]
-    plot_learning_curve(x, score_history, filename)
+    if not load_checkpoint:
+        x = [i+1 for i in range(n_games)]
+        plot_learning_curve(x, score_history, filename)

@@ -49,7 +49,7 @@ class CriticNetwork(nn.Module):
         self.fc2 = nn.Linear(fc1_dims, fc2_dims)
         self.v = nn.Linear(fc2_dims, 1)
         self.optimizer = optim.Adam(self.parameters(), lr=alpha)
-        
+
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
@@ -67,7 +67,7 @@ class CriticNetwork(nn.Module):
     def load_checkpoint(self):
         self.load_state_dict(T.load(self.checkpoint_file))
 
-class Agent:
+class PPOAgent:
     def __init__(self, n_actions, input_dims, gamma=0.99, alpha=0.0003, gae_lambda=0.95,
             policy_clip=0.2, batch_size=64, n_epochs=10):
         self.gamma = gamma
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     batch_size = 5
     n_epochs = 4
     alpha = 0.0003
-    agent = Agent(n_actions=env.action_space.n, batch_size=batch_size,
+    agent = PPOAgent(n_actions=env.action_space.n, batch_size=batch_size,
                     alpha=alpha, n_epochs=n_epochs,
                     input_dims=env.observation_space.shape)
     n_games = 300

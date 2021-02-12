@@ -137,7 +137,7 @@ class ActorNetwork(nn.Module):
         T.load_state_dict(T.load(self.checkpoint_file))
 
 
-class Agent():
+class DDPGAgent():
     def __init__(self, alpha, beta, input_dims, tau, n_actions, gamma=0.99,
                 max_size=1000000, fc1_dims=400, fc2_dims=300, batch_size=64):
         self.gamma = gamma
@@ -245,7 +245,7 @@ class Agent():
 
 if __name__ == "__main__":
     env = gym.make('LunarLanderContinuous-v2')
-    agent = Agent(alpha=0.0001, beta=0.001, input_dims=env.observation_space.shape,
+    agent = DDPGAgent(alpha=0.0001, beta=0.001, input_dims=env.observation_space.shape,
                 tau=0.001, batch_size=64, fc1_dims=400, fc2_dims=300,
                 n_actions=env.action_space.shape[0])
     n_games = 2000
