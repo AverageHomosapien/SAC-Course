@@ -1,0 +1,1 @@
+ensure that discrete environments work - if discrete environments need to be run?

@@ -53,6 +53,14 @@ class DQNAgent():
         action = T.argmax(actions).item()
         return action
 
+    def save_model(self):
+        print('... saving model')
+        self.memory.save_checkpoint()
+
+    def load_model(self):
+        print('... loading model')
+        self.memory.load_checkpoint()
+
     def learn(self):
         if self.memory.mem_cntr < self.batch_size:
             return
@@ -83,11 +91,19 @@ class DQNAgent():
         self.epsilon = max(self.epsilon, self.eps_min)
 
 if __name__ == '__main__':
-    env = gym.make('LunarLander-v2')
+    dqn_run()
+
+def dqn_run(env_id='LunarLander-v2', test_model=False, total_games=1000):
+    env = gym.make(env_id)
+    n_games = total_games
+    load_checkpoint = test_model
+
     agent = DQNAgent(gamma=0.99, epsilon=1.0, batch_size=64, n_actions=4,
                 eps_end=0.01, input_dims=[8], lr=0.03) # cartpole n_actions=2, input_dims=[4]
     scores, eps_history = [], []
-    n_games = 1000
+
+    if load_checkpoint:
+        agent.load_model()
 
     for i in range(n_games):
         done = False
@@ -98,15 +114,22 @@ if __name__ == '__main__':
             observation_, reward, done, _ = env.step(action)
             score += reward
             agent.remember(observation, action, reward, observation_, done)
-            agent.learn()
+            if not load_checkpoint:
+                agent.learn()
             observation = observation_
         scores.append(score)
         eps_history.append(agent.epsilon)
 
         avg_score = np.mean(scores[-100:])
 
+        if avg_score > best_score:
+            best_score = avg_score
+            if not load_checkpoint:
+                agent.save_models()
+
         print('episode: {}, score: {}, avg score: {}, eps: {}'.format(i, score, avg_score, agent.epsilon))
 
     x = [i+1 for i in range(n_games)]
-    filename = 'CartPole_' + str(n_games) + '.png'
-    plot_learning_curve(x, scores, filename)
+    if not load_checkpoint:
+        filename = 'CartPole_' + str(n_games) + '.png'
+        plot_learning_curve(x, scores, filename)

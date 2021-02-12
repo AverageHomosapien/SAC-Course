@@ -281,12 +281,16 @@ class SACAgent():
 
         self.update_network_parameters()
 
-# environments with large negative rewards don't work
-# pybullet package looks good
-
+# environments with large negative rewards don't work (e.g. LunarLander)
 if __name__ == '__main__':
-    env_id = 'LunarLanderContinuous-v2'
+    sac_run()
+
+# seperate method for running the network so that it can be called from run_agents
+def sac_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
     env = gym.make(env_id)
+    n_games = total_games
+    load_checkpoint = test_model
+
     agent = SACAgent(alpha=0.003, beta=0.003, reward_scale=2, env_id=env_id,
                 input_dims=env.observation_space.shape, tau=0.005,
                 env=env, batch_size=256, layer1_size=256, layer2_size=256,

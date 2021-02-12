@@ -261,6 +261,7 @@ if __name__ == '__main__':
     td3_run()
 
 
+# seperate method for running the network so that it can be called from run_agents
 def td3_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
     env = gym.make(env_id)
     n_games = total_games
