@@ -198,10 +198,10 @@ class DDPGAgent():
         critic_value_ = self.target_critic.forward(states_, target_actions)
         critic_value = self.critic.forward(states, actions)
 
-        critic_value_[done] = 0.0
+        critic_value_[dones] = 0.0
         critic_value_ = critic_value_.view(-1)
 
-        target = reward + self.gamma * critic_value_
+        target = rewards + self.gamma * critic_value_
         target = target.view(self.batch_size, 1)
 
         self.critic.optimizer.zero_grad()
@@ -242,9 +242,6 @@ class DDPGAgent():
         self.target_actor.load_state_dict(actor_state_dict)
         #self.target_critic.load_state_dict(critic_state_dict, strict=False)
         #self.target_actor.load_state_dict(actor_state_dict, strict=False)
-
-if __name__ == "__main__":
-    ddpg_run()
 
 def ddpg_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
     env = gym.make(env_id)
@@ -289,3 +286,6 @@ def ddpg_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=10
     if not load_checkpoint:
         x = [i+1 for i in range(n_games)]
         plot_learning_curve(x, score_history, figure_file)
+
+if __name__ == "__main__":
+    ddpg_run()
