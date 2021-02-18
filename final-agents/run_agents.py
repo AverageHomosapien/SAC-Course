@@ -1,4 +1,4 @@
-import pybullet
+import pybullet_envs
 import gym
 import os
 import numpy as np
@@ -10,9 +10,11 @@ from SAC import sac_run
 
 continuous_envs = ['LunarLanderContinuous-v2', 'MountainCarContinuous-v0',
                     'InvertedPendulumBulletEnv-v0', 'Hopper-v1']
-continuous_env_steps = [40000, 40000,
-                        100000, 100000]
+continuous_env_steps = [50000, 50000,
+                        50000, 50000]
 continuous_runs = [ddpg_run, td3_run, ppo_run, sac_run]
+continous_action_spaces = [4, 2, 1, ]
+continuous_obs_spaces = [8, 4, 5, ]
 
 discrete_envs = ['LunarLander-v2', 'MountainCar-v0']
 discrete_env_steps = [40000, 40000]

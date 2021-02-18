@@ -129,7 +129,7 @@ def dqn_run(env_id='LunarLander-v2', test_model=False, total_games=1000):
 
     x = [i+1 for i in range(n_games)]
     if not load_checkpoint:
-        filename = 'CartPole_' + str(n_games) + '.png'
+        filename = env_id + '_' + str(n_games) + '.png'
         plot_learning_curve(x, scores, filename)
 
 

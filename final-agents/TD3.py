@@ -266,7 +266,7 @@ def td3_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=100
             input_dims=env.observation_space.shape, tau=0.005,
             env=env, batch_size=100, layer1_size=400, layer2_size=300,
             n_actions=env.action_space.shape[0])
-    filename = 'plots/' + env_id + str(n_games) + '_games.png'
+    filename = 'plots/' + env_id + "_"+ str(n_games) + '_games.png'
 
     best_score = env.reward_range[0]
     score_history = []

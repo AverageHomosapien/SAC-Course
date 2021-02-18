@@ -170,7 +170,7 @@ def ppo_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=100
                     alpha=alpha, n_epochs=n_epochs,
                     input_dims=env.observation_space.shape)
 
-    figure_file = 'plots/cartpole.png'
+    figure_file = 'plots/' + env_id + '.png'
 
     best_score = env.reward_range[0]
     score_history = []
