@@ -90,8 +90,6 @@ class DQNAgent():
         self.epsilon -= self.eps_dec
         self.epsilon = max(self.epsilon, self.eps_min)
 
-if __name__ == '__main__':
-    dqn_run()
 
 def dqn_run(env_id='LunarLander-v2', test_model=False, total_games=1000):
     env = gym.make(env_id)
@@ -133,3 +131,7 @@ def dqn_run(env_id='LunarLander-v2', test_model=False, total_games=1000):
     if not load_checkpoint:
         filename = 'CartPole_' + str(n_games) + '.png'
         plot_learning_curve(x, scores, filename)
+
+
+if __name__ == '__main__':
+    dqn_run()

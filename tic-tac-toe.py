@@ -3,7 +3,7 @@ import numpy as np
 
 
 class Agent():
-    def __init__(self, player1=True, epsilon=1, eps_dec=0.000001, eps_min=0.04):
+    def __init__(self, player1=True, epsilon=1, eps_dec=0.000001, eps_min=0.02):
         if player1:
             self.marker = 1
         else:
@@ -13,8 +13,6 @@ class Agent():
         self.epsilon_dec = eps_dec
 
         self.Q_table = {} # tracks (state, action) tuples to track the value of an agent taking x in action in a state
-        self.return_value = {} # tracks total return values for calculating the mean
-        self.return_number = {} # tracks total returns for calculating the mean
         self.visited = [] # tracks visited states in an episode
 
     # Updates the agent epsilon (called at the end of each episode)
@@ -30,8 +28,6 @@ class Agent():
             for move in range(9):
                 if (t_state, move) not in self.Q_table:
                     self.Q_table[(t_state, move)] = 0.05 # adding possible moves
-                    self.return_value[(t_state, move)] = 0.0
-                    self.return_number[(t_state, move)] = 0
 
         if random.random() > self.epsilon: # if choosing 'optimal' move
             action_scores = [self.Q_table[t_state, move] for move in legal_moves] # get each legal action
@@ -56,19 +52,6 @@ class Agent():
             reward = -1 # reward for a loss
         else:
             reward = 0 # reward for a draw
-
-        # Adding reward to return tables
-        if reward != 0:
-            for idx, (state, action) in enumerate(self.visited):
-                G = 0
-                discount = 1
-                for t in range(idx):
-                    G += reward * discount
-                    discount *= 0.99
-                    self.return_value[(state, action)] += G # add the return 'value'
-
-        for idx, (state, action) in enumerate(self.visited):
-            self.return_number[(state, action)] += 1 # state has been visited
 
         # Update states before the end
         for idx, (state, action) in enumerate(self.visited[:-1]):

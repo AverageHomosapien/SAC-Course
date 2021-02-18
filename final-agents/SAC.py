@@ -281,10 +281,6 @@ class SACAgent():
 
         self.update_network_parameters()
 
-# environments with large negative rewards don't work (e.g. LunarLander)
-if __name__ == '__main__':
-    sac_run()
-
 # seperate method for running the network so that it can be called from run_agents
 def sac_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
     env = gym.make(env_id)
@@ -334,3 +330,7 @@ def sac_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=100
     if not load_checkpoint:
         x = [i+1 for i in range(n_games)]
         plot_learning_curve(x, score_history, figure_file)
+
+# environments with large negative rewards don't work (e.g. LunarLander)
+if __name__ == '__main__':
+    sac_run()

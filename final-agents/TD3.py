@@ -256,11 +256,6 @@ class TD3Agent():
         self.target_critic_2.load_checkpoint()
 
 
-
-if __name__ == '__main__':
-    td3_run()
-
-
 # seperate method for running the network so that it can be called from run_agents
 def td3_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
     env = gym.make(env_id)
@@ -306,3 +301,7 @@ def td3_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=100
     if not load_checkpoint:
         x = [i+1 for i in range(n_games)]
         plot_learning_curve(x, score_history, filename)
+
+
+if __name__ == '__main__':
+    td3_run()

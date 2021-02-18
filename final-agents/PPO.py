@@ -157,9 +157,6 @@ class PPOAgent:
         self.memory.clear_memory()
 
 
-if __name__ == '__main__':
-    ppo_run()
-
 def ppo_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
     env = gym.make(env_id)
     n_games = total_games
@@ -214,3 +211,7 @@ def ppo_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=100
     if load_checkpoint:
         x = [i+1 for i in range(len(score_history))]
         plot_learning_curve(x, score_history, figure_file)
+
+
+if __name__ == '__main__':
+    ppo_run()
