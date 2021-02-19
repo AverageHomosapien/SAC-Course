@@ -1,5 +1,6 @@
-import gym
 import os
+import pybullet_envs
+import gym
 import numpy as np
 import torch as T
 import torch.nn as nn
@@ -150,7 +151,7 @@ class ValueNetwork(nn.Module):
 
 class SACAgent():
     def __init__(self, alpha, beta, tau, env, env_id, input_dims, gamma=0.99, n_actions=2,
-                max_size=1e6, layer1_size=256, layer2_size=256, batch_size=100,
+                max_size=1000000, layer1_size=256, layer2_size=256, batch_size=100,
                 reward_scale=2):
 
         self.gamma = gamma
@@ -282,18 +283,19 @@ class SACAgent():
         self.update_network_parameters()
 
 # seperate method for running the network so that it can be called from run_agents
-def sac_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
+def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000, run=0):
     env = gym.make(env_id)
     n_games = total_games
     load_checkpoint = test_model
+    total_actions = env.action_space.shape[0] if actions == None else actions
+    obs_space = env.observation_space.shape if obs == None else obs
 
     agent = SACAgent(alpha=0.003, beta=0.003, reward_scale=2, env_id=env_id,
-                input_dims=env.observation_space.shape, tau=0.005,
+                input_dims=obs_space, tau=0.005,
                 env=env, batch_size=256, layer1_size=256, layer2_size=256,
-                n_actions=env.action_space.shape[0])
+                n_actions=total_actions)
     n_games = 1000
-    filename = env_id+'_'+str(n_games)+'games_scale'+str(agent.scale)+'.png'
-    figure_file = 'plots/' + filename
+    filename = 'plots/sac_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games.png'
 
     best_score = env.reward_range[0]
     score_history = []
@@ -329,7 +331,7 @@ def sac_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=100
             i, score, avg_score, steps, env_id))
     if not load_checkpoint:
         x = [i+1 for i in range(n_games)]
-        plot_learning_curve(x, score_history, figure_file)
+        plot_learning_curve(x, score_history, filename)
 
 # environments with large negative rewards don't work (e.g. LunarLander)
 if __name__ == '__main__':

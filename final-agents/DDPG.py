@@ -1,5 +1,6 @@
-import gym
 import os
+import pybullet_envs
+import gym
 import datetime
 import numpy as np
 import torch as T
@@ -244,17 +245,18 @@ class DDPGAgent():
         #self.target_critic.load_state_dict(critic_state_dict, strict=False)
         #self.target_actor.load_state_dict(actor_state_dict, strict=False)
 
-def ddpg_run(actions, obs, env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
+def ddpg_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000, run=0):
     env = gym.make(env_id)
     n_games = total_games
     load_checkpoint = test_model
+    total_actions = env.action_space.shape[0] if actions == None else actions
+    obs_space = env.observation_space.shape if obs == None else obs
 
-    agent = DDPGAgent(alpha=0.0001, beta=0.001, input_dims=env.observation_space.shape,
+    agent = DDPGAgent(alpha=0.0001, beta=0.001, input_dims=obs_space,
                 tau=0.001, batch_size=64, fc1_dims=400, fc2_dims=300,
-                n_actions=env.action_space.shape[0])
-    filename = 'LunarLander_alpha_' + str(agent.alpha) + '_beta_' + \
-                str(agent.beta) + '_' + str(n_games) + '_games_'
-    figure_file = 'plots/' + filename + str(datetime.datetime.now().microsecond) + '.png'
+                n_actions=total_actions)
+
+    filename = 'plots/ddpg_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games.png'
 
     best_score = env.reward_range[0]
     score_history = []
@@ -286,7 +288,7 @@ def ddpg_run(actions, obs, env_id='LunarLanderContinuous-v2', test_model=False, 
         print('episode', i, 'score %.1f' % score, 'average score %.1f' % avg_score)
     if not load_checkpoint:
         x = [i+1 for i in range(n_games)]
-        plot_learning_curve(x, score_history, figure_file)
+        plot_learning_curve(x, score_history, filename)
 
 if __name__ == "__main__":
     ddpg_run()

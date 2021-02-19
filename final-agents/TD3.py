@@ -1,4 +1,5 @@
 import os
+import pybullet_envs
 import gym
 import numpy as np
 import torch as T
@@ -126,15 +127,10 @@ class TD3Agent():
 
     def choose_action(self, observation):
         if self.time_step < self.warmup:
-            mu = T.tensor(np.random.normal(scale=self.noise,size=(self.n_actions,)))
+            mu = T.tensor(np.random.normal(scale=self.noise,size=(self.n_actions,))).to(self.actor.device)
         else:
             state = T.tensor(observation, dtype=T.float).to(self.actor.device)
-            #mu = self.actor.forward(state).to(self.actor.device)
-            mu = self.actor.forward(state)
-            mu.device = self.actor.device
-        print(self.actor.device)
-        print("Mu is {}, mu device is {}".format(mu, mu.device))
-        #print(state.device)
+            mu = self.actor.forward(state).to(self.actor.device)
         mu_prime = mu + T.tensor(np.random.normal(scale=self.noise),
                                     dtype=T.float).to(self.actor.device)
 
@@ -162,8 +158,7 @@ class TD3Agent():
         target_actions = self.target_actor.forward(state_)
         target_actions = target_actions + \
                 T.clamp(T.tensor(np.random.normal(scale=0.2)), -0.5, 0.5)
-        target_actions = T.clamp(target_actions, self.min_action[0],
-                                self.max_action[0])
+        target_actions = T.clamp(target_actions, self.min_action, self.max_action)
 
         q1_ = self.target_critic_1.forward(state_, target_actions)
         q2_ = self.target_critic_2.forward(state_, target_actions)
@@ -257,16 +252,18 @@ class TD3Agent():
 
 
 # seperate method for running the network so that it can be called from run_agents
-def td3_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
+def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000, run=0):
     env = gym.make(env_id)
     n_games = total_games
     load_checkpoint = test_model
+    total_actions = env.action_space.shape[0] if actions == None else actions
+    obs_space = env.observation_space.shape if obs == None else obs
 
     agent = TD3Agent(alpha=0.001, beta=0.001,
-            input_dims=env.observation_space.shape, tau=0.005,
+            input_dims=obs_space, tau=0.005,
             env=env, batch_size=100, layer1_size=400, layer2_size=300,
-            n_actions=env.action_space.shape[0])
-    filename = 'plots/' + env_id + "_"+ str(n_games) + '_games.png'
+            n_actions=total_actions)
+    filename = 'plots/td3_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games.png'
 
     best_score = env.reward_range[0]
     score_history = []

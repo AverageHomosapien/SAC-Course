@@ -1,4 +1,5 @@
 import os
+import pybullet_envs
 import gym
 import numpy as np
 import torch as T
@@ -157,20 +158,22 @@ class PPOAgent:
         self.memory.clear_memory()
 
 
-def ppo_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
+def ppo_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000, run=0):
     env = gym.make(env_id)
     n_games = total_games
     load_checkpoint = test_model
+    total_actions = env.action_space.shape[0] if actions == None else actions
+    obs_space = env.observation_space.shape if obs == None else obs
 
     N = 20
     batch_size = 5
     n_epochs = 4
-    alpha = 0.0003
-    agent = PPOAgent(n_actions=env.action_space.n, batch_size=batch_size,
+    alpha = 0.0003 #n_actions = env.action_space.n, input_dims=env.observation_space.shape
+    agent = PPOAgent(n_actions=total_actions, batch_size=batch_size,
                     alpha=alpha, n_epochs=n_epochs,
-                    input_dims=env.observation_space.shape)
+                    input_dims=obs_space)
 
-    figure_file = 'plots/' + env_id + '.png'
+    filename = 'plots/ppo_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games.png'
 
     best_score = env.reward_range[0]
     score_history = []
@@ -189,6 +192,7 @@ def ppo_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=100
         score = 0
         while not done:
             action, prob, val = agent.choose_action(observation)
+            print("Action is {}".format(action))
             observation_, reward, done, info = env.step(action)
             n_steps += 1
             score += reward

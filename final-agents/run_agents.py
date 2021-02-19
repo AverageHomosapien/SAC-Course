@@ -13,17 +13,18 @@ continuous_envs = ['LunarLanderContinuous-v2', 'MountainCarContinuous-v0',
 continuous_env_steps = [50000, 50000,
                         50000]
 continuous_runs = [ddpg_run, td3_run, ppo_run, sac_run]
-continous_action_spaces = [4, 2, 1]
-continuous_obs_spaces = [8, 4, 5]
+continous_action_spaces = [2, 2, 1]
+continuous_obs_spaces = [(8,), (4,), (5,)]
 
 discrete_envs = ['LunarLander-v2', 'MountainCar-v0']
-discrete_env_steps = [40000, 40000]
+discrete_env_steps = [50000, 50000]
 discrete_runs = [dqn_run]
 
 if __name__ == '__main__':
-    env_steps_continuous = list(zip(continuous_envs, continuous_env_steps))
+    env_steps_continuous = list(zip(continuous_action_spaces, continuous_obs_spaces, continuous_envs, continuous_env_steps))
     for idx, run in enumerate(continuous_runs):
-        run(env_id=env_steps_continuous[idx][0], total_runs=env_steps_continuous[idx][1])
+        run(actions=env_steps_continuous[idx][0], obs=env_steps_continuous[idx][1],
+            env_id=env_steps_continuous[idx][2], total_runs=env_steps_continuous[idx][3], run=idx)
 
     for idx, run in enumerate(discrete_runs):
         run(env_id=env_steps_continuous[idx][0], total_runs=env_steps_continuous[idx][1])

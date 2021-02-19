@@ -1,4 +1,5 @@
 import gym
+import os
 import numpy as np
 import torch as T
 import torch.nn as nn
@@ -7,7 +8,7 @@ import torch.optim as optim
 from utils import ReplayBuffer, plot_learning_curve
 
 class DeepQNetwork(nn.Module):
-    def __init__(self, lr, input_dims, fc1_dims, fc2_dims, n_actions):
+    def __init__(self, lr, input_dims, fc1_dims, fc2_dims, n_actions, chkpt_dir='tmp/dqn'):
         super(DeepQNetwork, self).__init__()
 
         self.fc1 = nn.Linear(*input_dims, fc1_dims)
@@ -15,6 +16,9 @@ class DeepQNetwork(nn.Module):
         self.q = nn.Linear(fc2_dims, n_actions)
         self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.loss = nn.MSELoss()
+
+        self.checkpoint_dir = chkpt_dir
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, 'network_dqn')
 
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
@@ -24,6 +28,15 @@ class DeepQNetwork(nn.Module):
         x = F.relu(self.fc2(x))
         actions = self.q(x)
         return actions
+
+    def save_checkpoint(self):
+        print('... saving checkpoint ...')
+        T.save(self.state_dict(), self.checkpoint_file)
+
+    def load_checkpoint(self):
+        print('... loading checkpoint ...')
+        self.load_state_dict(T.load(self.checkpoint_file))
+
 
 class DQNAgent():
     def __init__(self, gamma, epsilon, lr, input_dims, batch_size, n_actions,
@@ -55,11 +68,11 @@ class DQNAgent():
 
     def save_model(self):
         print('... saving model')
-        self.memory.save_checkpoint()
+        self.network.save_checkpoint()
 
     def load_model(self):
         print('... loading model')
-        self.memory.load_checkpoint()
+        self.network.load_checkpoint()
 
     def learn(self):
         if self.memory.mem_cntr < self.batch_size:
@@ -91,7 +104,7 @@ class DQNAgent():
         self.epsilon = max(self.epsilon, self.eps_min)
 
 
-def dqn_run(env_id='LunarLander-v2', test_model=False, total_games=1000):
+def dqn_run(env_id='LunarLander-v2', test_model=False, total_games=1000, run=0):
     env = gym.make(env_id)
     n_games = total_games
     load_checkpoint = test_model
@@ -99,6 +112,8 @@ def dqn_run(env_id='LunarLander-v2', test_model=False, total_games=1000):
     agent = DQNAgent(gamma=0.99, epsilon=1.0, batch_size=64, n_actions=4,
                 eps_end=0.01, input_dims=[8], lr=0.03) # cartpole n_actions=2, input_dims=[4]
     scores, eps_history = [], []
+
+    best_score = env.reward_range[0]
 
     if load_checkpoint:
         agent.load_model()
@@ -123,13 +138,13 @@ def dqn_run(env_id='LunarLander-v2', test_model=False, total_games=1000):
         if avg_score > best_score:
             best_score = avg_score
             if not load_checkpoint:
-                agent.save_models()
+                agent.save_model()
 
         print('episode: {}, score: {}, avg score: {}, eps: {}'.format(i, score, avg_score, agent.epsilon))
 
     x = [i+1 for i in range(n_games)]
     if not load_checkpoint:
-        filename = env_id + '_' + str(n_games) + '.png'
+        filename = 'plots/dqn_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games.png'
         plot_learning_curve(x, scores, filename)
 
 
