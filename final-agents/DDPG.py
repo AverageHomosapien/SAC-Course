@@ -244,7 +244,7 @@ class DDPGAgent():
         #self.target_critic.load_state_dict(critic_state_dict, strict=False)
         #self.target_actor.load_state_dict(actor_state_dict, strict=False)
 
-def ddpg_run(env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
+def ddpg_run(actions, obs, env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000):
     env = gym.make(env_id)
     n_games = total_games
     load_checkpoint = test_model
