@@ -12,7 +12,7 @@ continuous_envs = ['LunarLanderContinuous-v2', 'MountainCarContinuous-v0',
                     'InvertedPendulumBulletEnv-v0'] #Hopper-v2
 continuous_env_steps = [50000, 50000,
                         50000]
-continuous_runs = [ddpg_run, td3_run, ppo_run, sac_run]
+continuous_runs = [ddpg_run, td3_run, sac_run] #ppo_run, 
 continous_action_spaces = [2, 2, 1]
 continuous_obs_spaces = [(8,), (4,), (5,)]
 
