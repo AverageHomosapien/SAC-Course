@@ -1,12 +1,53 @@
 import os
-import pybullet_envs
 import gym
 import numpy as np
 import torch as T
 import torch.nn as nn
 import torch.optim as optim
 from torch.distributions.categorical import Categorical
-from utils import PPOMemory, plot_learning_curve
+from utils import plot_learning_curve
+
+class PPOMemory:
+    def __init__(self, batch_size):
+        self.states = []
+        self.probs = []
+        self.vals = []
+        self.actions = []
+        self.rewards = []
+        self.dones = []
+
+        self.batch_size = batch_size
+
+    def generate_batches(self):
+        n_states = len(self.states)
+        batch_start = np.arange(0, n_states, self.batch_size)
+        indices = np.arange(n_states, dtype=np.int64)
+        np.random.shuffle(indices)
+        batches = [indices[i:i+self.batch_size] for i in batch_start]
+
+        return np.array(self.states),\
+                np.array(self.actions),\
+                np.array(self.probs),\
+                np.array(self.vals),\
+                np.array(self.rewards),\
+                np.array(self.dones),\
+                batches
+
+    def store_memory(self, state, action, probs, vals, reward, done):
+        self.states.append(state)
+        self.actions.append(action)
+        self.probs.append(probs)
+        self.vals.append(vals)
+        self.rewards.append(reward)
+        self.dones.append(done)
+
+    def clear_memory(self):
+        self.states = []
+        self.probs = []
+        self.actions = []
+        self.rewards = []
+        self.dones = []
+        self.vals = []
 
 class ActorNetwork(nn.Module):
     def __init__(self, n_actions, input_dims, alpha,
@@ -14,27 +55,23 @@ class ActorNetwork(nn.Module):
         super(ActorNetwork, self).__init__()
 
         self.checkpoint_file = os.path.join(chkpt_dir, 'actor_torch_ppo')
+        self.actor = nn.Sequential(
+                nn.Linear(*input_dims, fc1_dims),
+                nn.ReLU(),
+                nn.Linear(fc1_dims, fc2_dims),
+                nn.ReLU(),
+                nn.Linear(fc2_dims, n_actions),
+                nn.Softmax(dim=-1)
+        )
 
-        self.fc1 = nn.Linear(*input_dims, fc1_dims)
-        self.fc2 = nn.Linear(fc1_dims, fc2_dims)
-        self.fc3 = nn.Linear(fc2_dims, n_actions)
-        print("N actions are {}".format(n_actions))
-        self.smax = nn.Softmax(dim=-1)
         self.optimizer = optim.Adam(self.parameters(), lr=alpha)
-
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, state):
-        dist = self.fc1(state)
-        dist = T.relu(dist)
-        dist = self.fc2(dist)
-        dist = T.relu(dist)
-        dist = self.fc3(dist)
-        dist = self.smax(dist)
-        #print("Dist is {}".format(dist))
+        dist = self.actor(state)
         dist = Categorical(dist)
-        #print("Last dist is {}".format(dist))
+
         return dist
 
     def save_checkpoint(self):
@@ -49,20 +86,21 @@ class CriticNetwork(nn.Module):
         super(CriticNetwork, self).__init__()
 
         self.checkpoint_file = os.path.join(chkpt_dir, 'critic_torch_ppo')
-        self.fc1 = nn.Linear(*input_dims, fc1_dims)
-        self.fc2 = nn.Linear(fc1_dims, fc2_dims)
-        self.v = nn.Linear(fc2_dims, 1)
-        self.optimizer = optim.Adam(self.parameters(), lr=alpha)
+        self.critic = nn.Sequential(
+                nn.Linear(*input_dims, fc1_dims),
+                nn.ReLU(),
+                nn.Linear(fc1_dims, fc2_dims),
+                nn.ReLU(),
+                nn.Linear(fc2_dims, 1)
+        )
 
+        self.optimizer = optim.Adam(self.parameters(), lr=alpha)
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, state):
-        value = self.fc1(state)
-        value = T.relu(value)
-        value = self.fc2(value)
-        value = T.relu(value)
-        value = self.v(value)
+        value = self.critic(state)
+
         return value
 
     def save_checkpoint(self):
@@ -71,7 +109,7 @@ class CriticNetwork(nn.Module):
     def load_checkpoint(self):
         self.load_state_dict(T.load(self.checkpoint_file))
 
-class PPOAgent:
+class Agent:
     def __init__(self, n_actions, input_dims, gamma=0.99, alpha=0.0003, gae_lambda=0.95,
             policy_clip=0.2, batch_size=64, n_epochs=10):
         self.gamma = gamma
@@ -97,23 +135,16 @@ class PPOAgent:
         self.critic.load_checkpoint()
 
     def choose_action(self, observation):
-        print("Obs is {}".format(observation))
         state = T.tensor([observation], dtype=T.float).to(self.actor.device)
 
-        """
         dist = self.actor(state)
         value = self.critic(state)
         action = dist.sample()
-        print("Dist is {}, action is {}".format(dist, action))
-        """
-        action = self.actor(state)
-        value = self.critic(state)
 
         probs = T.squeeze(dist.log_prob(action)).item()
         action = T.squeeze(action).item()
         value = T.squeeze(value).item()
 
-        print("Probs is {}, action is {}, value is {}".format(probs, action, value))
         return action, probs, value
 
     def learn(self):
@@ -167,23 +198,18 @@ class PPOAgent:
 
         self.memory.clear_memory()
 
-
-def ppo_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000, run=0):
-    env = gym.make(env_id)
-    n_games = total_games
-    load_checkpoint = test_model
-    total_actions = env.action_space.shape[0] if actions == None else actions
-    obs_space = env.observation_space.shape if obs == None else obs
-
+if __name__ == '__main__':
+    env = gym.make('LunarLanderContinuous-v2')
     N = 20
     batch_size = 5
     n_epochs = 4
-    alpha = 0.0003 #n_actions = env.action_space.n, input_dims=env.observation_space.shape
-    agent = PPOAgent(n_actions=total_actions, batch_size=batch_size,
+    alpha = 0.0003
+    agent = Agent(n_actions=env.action_space.shape[0], batch_size=batch_size,
                     alpha=alpha, n_epochs=n_epochs,
-                    input_dims=obs_space)
+                    input_dims=env.observation_space.shape)
+    n_games = 300
 
-    filename = 'plots/ppo_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games.png'
+    figure_file = 'plots/cartpole.png'
 
     best_score = env.reward_range[0]
     score_history = []
@@ -192,40 +218,28 @@ def ppo_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
     avg_score = 0
     n_steps = 0
 
-    if load_checkpoint:
-        agent.load_models()
-
-
     for i in range(n_games):
         observation = env.reset()
         done = False
         score = 0
         while not done:
             action, prob, val = agent.choose_action(observation)
-            print("Action is {}".format(action))
             observation_, reward, done, info = env.step(action)
             n_steps += 1
             score += reward
             agent.remember(observation, action, prob, val, reward, done)
-            if not load_checkpoint:
-                if n_steps % N == 0:
-                    agent.learn()
-                    learn_iters += 1
+            if n_steps % N == 0:
+                agent.learn()
+                learn_iters += 1
             observation = observation_
         score_history.append(score)
         avg_score = np.mean(score_history[-100:])
 
         if avg_score > best_score:
             best_score = avg_score
-            if not load_checkpoint:
-                agent.save_models()
+            agent.save_models()
 
         print('episode', i, 'score %.1f' % score, 'avg score %.1f' % avg_score,
                 'time_steps', n_steps, 'learning_steps', learn_iters)
-    if load_checkpoint:
-        x = [i+1 for i in range(len(score_history))]
-        plot_learning_curve(x, score_history, figure_file)
-
-
-if __name__ == '__main__':
-    ppo_run()
+    x = [i+1 for i in range(len(score_history))]
+    plot_learning_curve(x, score_history, figure_file)
