@@ -41,11 +41,9 @@ class CriticNetwork(nn.Module):
         return q1
 
     def save_checkpoint(self):
-        print('... saving checkpoint ...')
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        print('... loading checkpoint ...')
         self.load_state_dict(T.load(self.checkpoint_file))
 
 class ActorNetwork(nn.Module):
@@ -80,11 +78,9 @@ class ActorNetwork(nn.Module):
         return mu
 
     def save_checkpoint(self):
-        print('... saving checkpoint ...')
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        print('... loading checkpoint ...')
         self.load_state_dict(T.load(self.checkpoint_file))
 
 
@@ -269,6 +265,7 @@ def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
     score_history = []
 
     if load_checkpoint:
+        print('... loading checkpoint ...')
         agent.load_models()
         env.render(mode='human')
 
@@ -290,6 +287,7 @@ def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
         if avg_score > best_score:
             best_score = avg_score
             if not load_checkpoint:
+                print("... saving checkpoint")
                 agent.save_models()
 
         print('episode ', i, 'score %.1f' % score,

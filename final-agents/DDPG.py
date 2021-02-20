@@ -69,11 +69,9 @@ class CriticNetwork(nn.Module):
         return state_action_value
 
     def save_checkpoint(self):
-        print("... saving checkpoint")
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        print("... loading checkpoint")
         T.load_state_dict(T.load(self.checkpoint_file))
 
 
@@ -246,7 +244,8 @@ class DDPGAgent():
         #self.target_critic.load_state_dict(critic_state_dict, strict=False)
         #self.target_actor.load_state_dict(actor_state_dict, strict=False)
 
-def ddpg_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=50, run=0):
+#def ddpg_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=50, run=0):
+def ddpg_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=50000, run=0):
     env = gym.make(env_id)
     n_games = total_games
     load_checkpoint = test_model
