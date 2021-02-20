@@ -284,7 +284,7 @@ class SACAgent():
         self.update_network_parameters()
 
 # seperate method for running the network so that it can be called from run_agents
-def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000, run=0):
+def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=50000, run=0):
     env = gym.make(env_id)
     n_games = total_games
     load_checkpoint = test_model
@@ -295,8 +295,7 @@ def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
                 input_dims=obs_space, tau=0.005,
                 env=env, batch_size=256, layer1_size=256, layer2_size=256,
                 n_actions=total_actions)
-    n_games = 1000
-    file = 'plots/sac_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games
+    file = 'plots/sac_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games'
     filename = file + '.png'
 
     best_score = env.reward_range[0]
