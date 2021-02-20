@@ -2,6 +2,7 @@ import os
 import pybullet_envs
 import gym
 import numpy as np
+import pandas as pd
 import torch as T
 import torch.nn.functional as F
 import torch.nn as nn
@@ -263,7 +264,6 @@ def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
             input_dims=obs_space, tau=0.005,
             env=env, batch_size=100, layer1_size=400, layer2_size=300,
             n_actions=total_actions)
-    filename = 'plots/td3_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games.png'
 
     best_score = env.reward_range[0]
     score_history = []
@@ -297,7 +297,11 @@ def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
 
     if not load_checkpoint:
         x = [i+1 for i in range(n_games)]
+        file = 'plots/td3_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games'
+        filename = file + '.png'
         plot_learning_curve(x, score_history, filename)
+        df = pd.DataFrame(score_history)
+        df.to_csv(file + '.csv')
 
 
 if __name__ == '__main__':

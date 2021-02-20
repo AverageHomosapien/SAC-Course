@@ -1,6 +1,7 @@
 import gym
 import os
 import numpy as np
+import pandas as pd
 import torch as T
 import torch.nn as nn
 import torch.nn.functional as F
@@ -142,10 +143,13 @@ def dqn_run(env_id='LunarLander-v2', test_model=False, total_games=1000, run=0):
 
         print('episode: {}, score: {}, avg score: {}, eps: {}'.format(i, score, avg_score, agent.epsilon))
 
-    x = [i+1 for i in range(n_games)]
     if not load_checkpoint:
-        filename = 'plots/dqn_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games.png'
+        x = [i+1 for i in range(n_games)]
+        file = 'plots/dqn_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games'
+        filename = file + '.png'
         plot_learning_curve(x, scores, filename)
+        df = pd.DataFrame(score_history)
+        df.to_csv(file + '.csv')
 
 
 if __name__ == '__main__':

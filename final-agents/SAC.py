@@ -2,6 +2,7 @@ import os
 import pybullet_envs
 import gym
 import numpy as np
+import pandas as pd
 import torch as T
 import torch.nn as nn
 import torch.optim as optim
@@ -295,7 +296,8 @@ def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
                 env=env, batch_size=256, layer1_size=256, layer2_size=256,
                 n_actions=total_actions)
     n_games = 1000
-    filename = 'plots/sac_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games.png'
+    file = 'plots/sac_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games
+    filename = file + '.png'
 
     best_score = env.reward_range[0]
     score_history = []
@@ -332,6 +334,8 @@ def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
     if not load_checkpoint:
         x = [i+1 for i in range(n_games)]
         plot_learning_curve(x, score_history, filename)
+        df = pd.DataFrame(score_history)
+        df.to_csv(file + '.csv')
 
 # environments with large negative rewards don't work (e.g. LunarLander)
 if __name__ == '__main__':

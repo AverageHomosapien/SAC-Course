@@ -1,1 +1,6 @@
 ensure that discrete environments work - if discrete environments need to be run?
+
+put in csv instead of straight into plot
+can then just read in jupyter notebook
+
+dones for runs that don't need done

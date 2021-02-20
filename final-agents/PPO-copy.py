@@ -2,7 +2,6 @@ import os
 import pybullet_envs
 import gym
 import numpy as np
-import pandas as pd
 import torch as T
 import torch.nn as nn
 import torch.optim as optim
@@ -19,6 +18,7 @@ class ActorNetwork(nn.Module):
         self.fc1 = nn.Linear(*input_dims, fc1_dims)
         self.fc2 = nn.Linear(fc1_dims, fc2_dims)
         self.fc3 = nn.Linear(fc2_dims, n_actions)
+        print("N actions are {}".format(n_actions))
         self.smax = nn.Softmax(dim=-1)
         self.optimizer = optim.Adam(self.parameters(), lr=alpha)
 
@@ -32,7 +32,9 @@ class ActorNetwork(nn.Module):
         dist = T.relu(dist)
         dist = self.fc3(dist)
         dist = self.smax(dist)
+        #print("Dist is {}".format(dist))
         dist = Categorical(dist)
+        #print("Last dist is {}".format(dist))
         return dist
 
     def save_checkpoint(self):
@@ -98,15 +100,15 @@ class PPOAgent:
         print("Obs is {}".format(observation))
         state = T.tensor([observation], dtype=T.float).to(self.actor.device)
 
-
+        """
         dist = self.actor(state)
         value = self.critic(state)
         action = dist.sample()
-        print("Dist is {}, value is {}, action is {}".format(dist, value, action))
+        print("Dist is {}, action is {}".format(dist, action))
         """
         action = self.actor(state)
         value = self.critic(state)
-        """
+
         probs = T.squeeze(dist.log_prob(action)).item()
         action = T.squeeze(action).item()
         value = T.squeeze(value).item()
@@ -181,6 +183,8 @@ def ppo_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
                     alpha=alpha, n_epochs=n_epochs,
                     input_dims=obs_space)
 
+    filename = 'plots/ppo_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games.png'
+
     best_score = env.reward_range[0]
     score_history = []
 
@@ -219,12 +223,8 @@ def ppo_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
         print('episode', i, 'score %.1f' % score, 'avg score %.1f' % avg_score,
                 'time_steps', n_steps, 'learning_steps', learn_iters)
     if load_checkpoint:
-        file = 'plots/ppo_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games'
-        filename = file + '.png'
         x = [i+1 for i in range(len(score_history))]
         plot_learning_curve(x, score_history, figure_file)
-        df = pd.DataFrame(score_history)
-        df.to_csv(file + '.csv')
 
 
 if __name__ == '__main__':
