@@ -249,7 +249,7 @@ class TD3Agent():
 
 
 # seperate method for running the network so that it can be called from run_agents
-def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=1000, run=0):
+def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=10000, run=0):
     env = gym.make(env_id)
     n_games = total_games
     load_checkpoint = test_model
@@ -258,7 +258,7 @@ def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
 
     agent = TD3Agent(alpha=0.001, beta=0.001,
             input_dims=obs_space, tau=0.005,
-            env=env, batch_size=100, layer1_size=400, layer2_size=300,
+            env=env, batch_size=100, layer1_size=256, layer2_size=256,
             n_actions=total_actions)
 
     best_score = env.reward_range[0]

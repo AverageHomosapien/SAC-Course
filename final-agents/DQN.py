@@ -105,7 +105,7 @@ class DQNAgent():
         self.epsilon = max(self.epsilon, self.eps_min)
 
 
-def dqn_run(env_id='LunarLander-v2', test_model=False, total_games=1000, run=0):
+def dqn_run(env_id='LunarLander-v2', test_model=False, total_games=50000, run=0):
     env = gym.make(env_id)
     n_games = total_games
     load_checkpoint = test_model
