@@ -84,7 +84,7 @@ class ActorNetwork(nn.Module):
         self.to(self.device)
 
     def forward(self, state):
-        prob = self.fc1(state)
+        prob = self.fc1(state.float()) # added float (was receiving double)
         prob = T.relu(prob)
         prob = self.fc2(prob)
         prob = T.relu(prob)
