@@ -2,6 +2,3 @@
 __pycache__/
 *__pycache__/
 __pycache__/*
-
-# Remove png plots
-*.png
