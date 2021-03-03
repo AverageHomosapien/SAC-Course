@@ -148,13 +148,13 @@ class DDPGAgent():
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)
         self.noise = OUActionNoise(mu=np.zeros(n_actions))
         self.actor = ActorNetwork(alpha, input_dims, fc1_dims, fc2_dims,
-                                    n_actions=n_actions, name='actor')
+                                    n_actions=n_actions, name=env_id+'_actor')
         self.critic = CriticNetwork(beta, input_dims, fc1_dims, fc2_dims,
-                                    n_actions=n_actions, name='critic')
+                                    n_actions=n_actions, name=env_id+'_critic')
         self.target_actor  = ActorNetwork(alpha, input_dims, fc1_dims, fc2_dims,
-                                    n_actions=n_actions, name='target_actor')
+                                    n_actions=n_actions, name=env_id+'_target_actor')
         self.target_critic = CriticNetwork(beta, input_dims, fc1_dims, fc2_dims,
-                                    n_actions=n_actions, name='target_critic')
+                                    n_actions=n_actions, name=env_id+'_target_critic')
         self.update_network_parameters(tau=1)
 
     def choose_action(self, observation):
@@ -245,7 +245,8 @@ class DDPGAgent():
         #self.target_actor.load_state_dict(actor_state_dict, strict=False)
 
 #def ddpg_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=1):
-def ddpg_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=0):
+#def ddpg_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=0):
+def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=60000, run=0):
     env = gym.make(env_id)
     n_games = total_games
     load_checkpoint = test_model
