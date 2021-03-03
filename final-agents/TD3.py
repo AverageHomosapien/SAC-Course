@@ -285,11 +285,11 @@ def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mode
         score_history.append(score)
         avg_score = np.mean(score_history[-100:])
 
-        if avg_score > best_score:
-            best_score = avg_score
-            if not load_checkpoint:
-                print("... saving checkpoint")
-                agent.save_models()
+        #if avg_score > best_score:
+        #    best_score = avg_score
+        if not load_checkpoint:
+            print("... saving checkpoint")
+            agent.save_models()
 
         print('episode ', i, 'score %.1f' % score,
                 'average score %.1f' % avg_score)
