@@ -152,7 +152,7 @@ class ValueNetwork(nn.Module):
 
 class SACAgent():
     def __init__(self, alpha, beta, tau, env, env_id, input_dims, gamma=0.99, n_actions=2,
-                max_size=1000000, layer1_size=256, layer2_size=256, batch_size=100,
+                max_size=1000000, layer1_size=256, layer2_size=256, batch_size=256,
                 reward_scale=2):
 
         self.gamma = gamma

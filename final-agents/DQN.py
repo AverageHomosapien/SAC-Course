@@ -110,7 +110,7 @@ def dqn_run(env_id='LunarLander-v2', test_model=False, total_games=20000, run=0)
     n_games = total_games
     load_checkpoint = test_model
 
-    agent = DQNAgent(gamma=0.99, epsilon=1.0, batch_size=64, n_actions=4,
+    agent = DQNAgent(gamma=0.99, epsilon=1.0, batch_size=256, n_actions=4,
                 eps_end=0.01, input_dims=[8], lr=0.03) # cartpole n_actions=2, input_dims=[4]
     scores, eps_history = [], []
 

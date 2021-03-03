@@ -138,7 +138,7 @@ class ActorNetwork(nn.Module):
 
 class DDPGAgent():
     def __init__(self, alpha, beta, input_dims, tau, n_actions, gamma=0.99,
-                max_size=1000000, fc1_dims=400, fc2_dims=300, batch_size=64):
+                max_size=1000000, fc1_dims=400, fc2_dims=300, batch_size=256):
         self.gamma = gamma
         self.tau = tau
         self.batch_size = batch_size
@@ -253,7 +253,7 @@ def ddpg_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mod
     obs_space = env.observation_space.shape if obs == None else obs
 
     agent = DDPGAgent(alpha=0.0001, beta=0.001, input_dims=obs_space,
-                tau=0.001, batch_size=64, fc1_dims=256, fc2_dims=256,
+                tau=0.001, batch_size=256, fc1_dims=256, fc2_dims=256,
                 n_actions=total_actions)
 
     best_score = env.reward_range[0]
