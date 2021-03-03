@@ -138,7 +138,7 @@ class ActorNetwork(nn.Module):
 
 class DDPGAgent():
     def __init__(self, alpha, beta, input_dims, tau, n_actions, gamma=0.99,
-                max_size=1000000, fc1_dims=400, fc2_dims=300, batch_size=256):
+                max_size=1000000, fc1_dims=256, fc2_dims=256, batch_size=256):
         self.gamma = gamma
         self.tau = tau
         self.batch_size = batch_size
@@ -278,10 +278,10 @@ def ddpg_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mod
         score_history.append(score)
         avg_score = np.mean(score_history[-100:])
 
-        if avg_score > best_score:
-            best_score = avg_score
-            if not load_checkpoint:
-                agent.save_models()
+        #if avg_score > best_score:
+        #    best_score = avg_score
+        if not load_checkpoint:
+            agent.save_models()
 
         print('episode', i, 'score %.1f' % score, 'average score %.1f' % avg_score)
     if not load_checkpoint:
