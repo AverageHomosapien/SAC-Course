@@ -274,12 +274,14 @@ def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mode
         observation = env.reset()
         done = False
         score = 0
+        steps = 0
         while not done:
             action = agent.choose_action(observation)
             observation_, reward, done, info = env.step(action)
             agent.remember(observation, action, reward, observation_, done)
             if not load_checkpoint:
                 agent.learn()
+            steps += 1
             score += reward
             observation = observation_
         score_history.append(score)
@@ -291,8 +293,8 @@ def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mode
             print("... saving checkpoint")
             agent.save_models()
 
-        print('episode ', i, 'score %.1f' % score,
-                'average score %.1f' % avg_score)
+        print('episode {} score {} trailing 100 games avg {} steps {} env {}'.format(
+            i, score, avg_score, steps, env_id))
 
     if not load_checkpoint:
         x = [i+1 for i in range(n_games)]

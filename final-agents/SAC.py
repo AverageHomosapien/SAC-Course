@@ -11,6 +11,24 @@ import torch.nn.functional as F
 from torch.distributions import Normal
 from utils import ReplayBuffer, plot_learning_curve
 
+"""
+I noticed something interesting with SAC in the Lunar Lander environment -
+I let it play 2000 games with a batch size of 64 and reward scale of 2 (first try,
+I have not tuned either of these). It got up to an average score around 120 at
+the 900 game mark then slowly leaked down to 115 average by the 2000 mark.
+
+I was disappointed until I looked at the actual renderings. The algorithm learns
+to land quite well, then randomly fires the thrusters until the game is terminated
+at 1000 steps. If you save a trained model, switch to deterministic and turn learning off,
+SAC performs on par with TD3 (trained similarly and re-run with no action noise or learning).
+
+The perceived benefit from keeping entropy high (resulting in thrusters randomly
+firing even when mu is near zero) must be greater than the negative reward.
+
+If there were some reward very late in the game, SAC would have found it.
+
+"""
+
 # V, Q, Policy networks
 # V takes states -> outputs scalar value
 # Critic takes states & actions, outputs scalar value (incorp actions first layer and use concat)
@@ -284,7 +302,8 @@ class SACAgent():
         self.update_network_parameters()
 
 # seperate method for running the network so that it can be called from run_agents
-def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=10000, run=0):
+def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=40000, run=0):
+#def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=50000, run=0):
 #def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=0):
     env = gym.make(env_id)
     n_games = total_games
@@ -307,8 +326,8 @@ def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mode
         agent.load_models()
         env.render(mode='human')
 
-    steps = 0
     for i in range(n_games):
+        steps = 0
         score = 0
         done = False
         observation = env.reset()
