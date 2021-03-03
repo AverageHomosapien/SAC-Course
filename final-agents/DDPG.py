@@ -138,7 +138,7 @@ class ActorNetwork(nn.Module):
 
 class DDPGAgent():
     def __init__(self, alpha, beta, input_dims, tau, n_actions, gamma=0.99,
-                max_size=1000000, fc1_dims=400, fc2_dims=300, batch_size=256):
+                max_size=1000000, fc1_dims=256, fc2_dims=256, batch_size=256):
         self.gamma = gamma
         self.tau = tau
         self.batch_size = batch_size
