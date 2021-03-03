@@ -53,6 +53,7 @@ class CriticNetwork(nn.Module):
         self.name = name
         self.checkpoint_dir = chkpt_dir
         self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_sac')
+        #self.checkpoint_file = self.checkpoint_dir + "/" + name + '_sac'
 
         self.fc1 = nn.Linear(self.input_dims[0] + self.n_actions, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
@@ -89,6 +90,7 @@ class ActorNetwork(nn.Module):
         self.name = name
         self.checkpoint_dir = chkpt_dir
         self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_sac')
+        #self.checkpoint_file = self.checkpoint_dir + "/" + name + '_sac'
 
         self.reparam_noise = 1e-6 # noise for the re-parameterisation trick
 
@@ -144,6 +146,7 @@ class ValueNetwork(nn.Module):
         self.name = name
         self.checkpoint_dir = chkpt_dir
         self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_sac')
+        #self.checkpoint_file = self.checkpoint_dir + "/" + name + '_sac'
 
         self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
@@ -302,7 +305,7 @@ class SACAgent():
         self.update_network_parameters()
 
 # seperate method for running the network so that it can be called from run_agents
-def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=40000, run=0):
+def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=60000, run=0):
 #def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=50000, run=0):
 #def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=0):
     env = gym.make(env_id)
@@ -345,8 +348,9 @@ def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Fals
 
         #if avg_score > best_score:
         #    best_score = avg_score
-        if not load_checkpoint:
-            agent.save_models()
+        if i % 20 == 0:
+            if not load_checkpoint:
+                agent.save_models()
 
         print('episode {} score {} trailing 100 games avg {} steps {} env {}'.format(
             i, score, avg_score, steps, env_id))

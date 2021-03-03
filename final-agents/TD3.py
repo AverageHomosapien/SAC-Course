@@ -232,6 +232,7 @@ class TD3Agent():
         self.target_actor.load_state_dict(actor)
 
     def save_models(self):
+        print('... saving checkpoint ...')
         self.actor.save_checkpoint()
         self.target_actor.save_checkpoint()
         self.critic_1.save_checkpoint()
@@ -240,6 +241,7 @@ class TD3Agent():
         self.target_critic_2.save_checkpoint()
 
     def load_models(self):
+        print('... loading checkpoint ...')
         self.actor.load_checkpoint()
         self.target_actor.load_checkpoint()
         self.critic_1.load_checkpoint()
@@ -266,7 +268,6 @@ def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mode
     score_history = []
 
     if load_checkpoint:
-        print('... loading checkpoint ...')
         agent.load_models()
         env.render(mode='human')
 
@@ -289,9 +290,9 @@ def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mode
 
         #if avg_score > best_score:
         #    best_score = avg_score
-        if not load_checkpoint:
-            print("... saving checkpoint")
-            agent.save_models()
+        if i % 20 == 0:
+            if not load_checkpoint:
+                agent.save_models()
 
         print('episode {} score {} trailing 100 games avg {} steps {} env {}'.format(
             i, score, avg_score, steps, env_id))

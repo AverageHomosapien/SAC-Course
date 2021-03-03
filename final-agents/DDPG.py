@@ -283,8 +283,9 @@ def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Fal
 
         #if avg_score > best_score:
         #    best_score = avg_score
-        if not load_checkpoint:
-            agent.save_models()
+        if i % 20 == 0:
+            if not load_checkpoint:
+                agent.save_models()
 
         print('episode {} score {} trailing 100 games avg {} steps {} env {}'.format(
         i, score, avg_score, steps, env_id))
