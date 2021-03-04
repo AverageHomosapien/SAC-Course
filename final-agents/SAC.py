@@ -305,7 +305,7 @@ class SACAgent():
         self.update_network_parameters()
 
 # seperate method for running the network so that it can be called from run_agents
-def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=60000, run=0):
+def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=200000, run=1):
 #def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=50000, run=0):
 #def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=0):
     env = gym.make(env_id)

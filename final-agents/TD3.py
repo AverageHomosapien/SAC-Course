@@ -85,7 +85,7 @@ class ActorNetwork(nn.Module):
 
 
 class TD3Agent():
-    def __init__(self, alpha, beta, input_dims, tau, env,
+    def __init__(self, env_id, alpha, beta, input_dims, tau, env,
             gamma=0.99, update_actor_interval=2, warmup=1000,
             n_actions=2, max_size=1000000, layer1_size=256,
             layer2_size=256, batch_size=256, noise=0.1):
@@ -251,7 +251,8 @@ class TD3Agent():
 
 # 20000 mountaincar games takes roughly 2 days + run for 3 networks to get zero'd results !!!!
 # seperate method for running the network so that it can be called from run_agents
-def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=1):
+def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=200000, run=0):
+#def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=1):
 #def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=0):
     env = gym.make(env_id)
     n_games = total_games
@@ -262,7 +263,7 @@ def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mode
     agent = TD3Agent(alpha=0.001, beta=0.001,
             input_dims=obs_space, tau=0.005,
             env=env, batch_size=256, layer1_size=256, layer2_size=256,
-            n_actions=total_actions)
+            n_actions=total_actions, env_id=env_id)
 
     best_score = env.reward_range[0]
     score_history = []
