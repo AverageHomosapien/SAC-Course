@@ -65,9 +65,9 @@ class CriticNetwork(nn.Module):
 
     def forward(self, state, action):
         action_value = self.fc1(T.cat([state, action], dim=1))
-        action_value = T.relu(action_value)
+        action_value = F.relu(action_value)
         action_value = self.fc2(action_value)
-        action_value = T.relu(action_value)
+        action_value = F.relu(action_value)
         action_value = self.q1(action_value)
         return action_value # no final layer activation
 
@@ -105,9 +105,9 @@ class ActorNetwork(nn.Module):
 
     def forward(self, state):
         prob = self.fc1(state.float()) # added float (was receiving double)
-        prob = T.relu(prob)
+        prob = F.relu(prob)
         prob = self.fc2(prob)
-        prob = T.relu(prob)
+        prob = F.relu(prob)
 
         mu = self.mu(prob)
         sigma = self.sigma(prob)
@@ -158,9 +158,9 @@ class ValueNetwork(nn.Module):
 
     def forward(self, state):
         state_value = self.fc1(state)
-        state_value = T.relu(state_value)
+        state_value = F.relu(state_value)
         state_value = self.fc2(state_value)
-        state_value = T.relu(state_value)
+        state_value = F.relu(state_value)
         state_value = self.v(state_value) # no final layer activation
         return state_value
 
@@ -218,7 +218,7 @@ class SACAgent():
         # overwriting parameters - setting new values
         for name in value_state_dict:
             value_state_dict[name] = tau*value_state_dict[name].clone() + \
-                (1-tau)*value_state_dict[name].clone()
+                (1-tau)*target_value_state_dict[name].clone()
 
         self.target_value.load_state_dict(value_state_dict)
 
