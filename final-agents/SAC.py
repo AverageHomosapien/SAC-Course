@@ -53,21 +53,20 @@ class CriticNetwork(nn.Module):
         self.name = name
         self.checkpoint_dir = chkpt_dir
         self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_sac')
-        #self.checkpoint_file = self.checkpoint_dir + "/" + name + '_sac'
 
-        self.fc1 = nn.Linear(self.input_dims[0] + self.n_actions, self.fc1_dims)
+        self.fc1 = nn.Linear(self.input_dims[0] + n_actions, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         self.q1 = nn.Linear(self.fc2_dims, 1)
-        self.optimizer = optim.Adam(self.parameters(), lr=beta)
 
+        self.optimizer = optim.Adam(self.parameters(), lr=beta)
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, state, action):
         action_value = self.fc1(T.cat([state, action], dim=1))
-        action_value = T.relu(action_value)
+        action_value = F.relu(action_value) # T.relu to F.relu
         action_value = self.fc2(action_value)
-        action_value = T.relu(action_value)
+        action_value = F.relu(action_value)
         action_value = self.q1(action_value)
         return action_value # no final layer activation
 
@@ -87,27 +86,26 @@ class ActorNetwork(nn.Module):
         self.fc2_dims = fc2_dims
         self.n_actions = n_actions
         self.max_action = max_action
+        self.reparam_noise = 1e-6 # noise for the re-parameterisation trick
         self.name = name
         self.checkpoint_dir = chkpt_dir
         self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_sac')
-        #self.checkpoint_file = self.checkpoint_dir + "/" + name + '_sac'
 
-        self.reparam_noise = 1e-6 # noise for the re-parameterisation trick
 
         self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         self.mu = nn.Linear(self.fc2_dims, self.n_actions)
         self.sigma = nn.Linear(self.fc2_dims, self.n_actions)
-        self.optimizer = optim.Adam(self.parameters(), lr=alpha)
 
+        self.optimizer = optim.Adam(self.parameters(), lr=alpha)
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, state):
         prob = self.fc1(state.float()) # added float (was receiving double)
-        prob = T.relu(prob)
+        prob = F.relu(prob)
         prob = self.fc2(prob)
-        prob = T.relu(prob)
+        prob = F.relu(prob)
 
         mu = self.mu(prob)
         sigma = self.sigma(prob)
@@ -146,21 +144,20 @@ class ValueNetwork(nn.Module):
         self.name = name
         self.checkpoint_dir = chkpt_dir
         self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_sac')
-        #self.checkpoint_file = self.checkpoint_dir + "/" + name + '_sac'
 
         self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         self.v = nn.Linear(self.fc2_dims, 1)
-        self.optimizer = optim.Adam(self.parameters(), lr=beta)
 
+        self.optimizer = optim.Adam(self.parameters(), lr=beta)
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, state):
         state_value = self.fc1(state)
-        state_value = T.relu(state_value)
+        state_value = F.relu(state_value)
         state_value = self.fc2(state_value)
-        state_value = T.relu(state_value)
+        state_value = F.relu(state_value)
         state_value = self.v(state_value) # no final layer activation
         return state_value
 
@@ -218,7 +215,7 @@ class SACAgent():
         # overwriting parameters - setting new values
         for name in value_state_dict:
             value_state_dict[name] = tau*value_state_dict[name].clone() + \
-                (1-tau)*value_state_dict[name].clone()
+                (1-tau)*target_value_state_dict[name].clone()
 
         self.target_value.load_state_dict(value_state_dict)
 
