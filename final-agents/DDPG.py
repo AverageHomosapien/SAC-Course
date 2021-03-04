@@ -137,7 +137,7 @@ class ActorNetwork(nn.Module):
 
 
 class DDPGAgent():
-    def __init__(self, alpha, beta, input_dims, tau, n_actions, gamma=0.99,
+    def __init__(self, env_id, alpha, beta, input_dims, tau, n_actions, gamma=0.99,
                 max_size=1000000, fc1_dims=256, fc2_dims=256, batch_size=256):
         self.gamma = gamma
         self.tau = tau
@@ -246,7 +246,7 @@ class DDPGAgent():
 
 #def ddpg_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=1):
 #def ddpg_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=0):
-def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=60000, run=0):
+def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=100000, run=1):
     env = gym.make(env_id)
     n_games = total_games
     load_checkpoint = test_model
@@ -255,7 +255,7 @@ def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Fal
 
     agent = DDPGAgent(alpha=0.0001, beta=0.001, input_dims=obs_space,
                 tau=0.001, batch_size=256, fc1_dims=256, fc2_dims=256,
-                n_actions=total_actions)
+                n_actions=total_actions, env_id=env_id)
 
     best_score = env.reward_range[0]
     score_history = []
