@@ -176,7 +176,7 @@ class ActorNetwork(nn.Module):
 
 
 class Agent():
-    def __init__(self, alpha=0.0003, beta=0.0003, input_dims=[8],
+    def __init__(self, env_id, alpha=0.0003, beta=0.0003, input_dims=[8],
             env=None, gamma=0.99, n_actions=2, max_size=1000000, tau=0.005,
             layer1_size=256, layer2_size=256, batch_size=256, reward_scale=2):
         self.gamma = gamma
@@ -297,8 +297,8 @@ class Agent():
         self.update_network_parameters()
 #InvertedPendulumBulletEnv
 # seperate method for running the network so that it can be called from run_agents
-def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=200000, run=0):
-#def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=50000, run=0):
+#def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=200000, run=0):
+def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=2):
 #def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=0):
     env = gym.make(env_id)
     n_games = total_games
