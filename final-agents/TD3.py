@@ -91,8 +91,8 @@ class TD3Agent():
             layer2_size=256, batch_size=256, noise=0.1):
         self.gamma = gamma
         self.tau = tau
-        #self.max_action = env.action_space.high
-        #self.min_action = env.action_space.low
+        self.max_action = env.action_space.high
+        self.min_action = env.action_space.low
         self.max_action = n_actions
         self.min_action = 0
 
@@ -131,8 +131,8 @@ class TD3Agent():
         mu_prime = mu + T.tensor(np.random.normal(scale=self.noise),
                                     dtype=T.float).to(self.actor.device)
 
-        #mu_prime = T.clamp(mu_prime, self.min_action[0], self.max_action[0])
-        mu_prime = T.clamp(mu_prime, self.min_action, self.max_action)
+        mu_prime = T.clamp(mu_prime, self.min_action[0], self.max_action[0])
+        #mu_prime = T.clamp(mu_prime, self.min_action, self.max_action)
         self.time_step += 1
 
         return mu_prime.cpu().detach().numpy()
@@ -155,7 +155,7 @@ class TD3Agent():
         target_actions = self.target_actor.forward(state_)
         target_actions = target_actions + \
                 T.clamp(T.tensor(np.random.normal(scale=0.2)), -0.5, 0.5)
-        target_actions = T.clamp(target_actions, self.min_action, self.max_action)
+        target_actions = T.clamp(target_actions, self.min_action[0], self.max_action[0])
 
         q1_ = self.target_critic_1.forward(state_, target_actions)
         q2_ = self.target_critic_2.forward(state_, target_actions)
