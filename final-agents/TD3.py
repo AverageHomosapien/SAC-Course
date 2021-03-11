@@ -93,8 +93,6 @@ class TD3Agent():
         self.tau = tau
         self.max_action = env.action_space.high
         self.min_action = env.action_space.low
-        self.max_action = n_actions
-        self.min_action = 0
 
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)
         self.batch_size = batch_size
@@ -251,7 +249,7 @@ class TD3Agent():
 
 # 20000 mountaincar games takes roughly 2 days + run for 3 networks to get zero'd results !!!!
 # seperate method for running the network so that it can be called from run_agents
-def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=40000, run=1):
+def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=40000, run=2):
 #def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=1):
 #def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=0):
     env = gym.make(env_id)
