@@ -1,0 +1,6 @@
+issues with training:
+
+determinism
+saving models
+ensuring models are running correctly
+model comparison - especially with stochasticity

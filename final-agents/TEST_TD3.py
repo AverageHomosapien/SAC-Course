@@ -234,12 +234,11 @@ class TD3Agent():
 
 # 20000 mountaincar games takes roughly 2 days + run for 3 networks to get zero'd results !!!!
 # seperate method for running the network so that it can be called from run_agents
-#def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=True, total_games=10, run=0):
-#def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=1):
-def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=True, total_games=10, run=0):
+def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', show_model=False, total_games=10, run=0):
+#def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', show_model=False, total_games=10, run=0):
+#def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', show_model=True, total_games=10, run=0):
     env = gym.make(env_id)
     n_games = total_games
-    load_checkpoint = test_model
     total_actions = env.action_space.shape[0] if actions == None else actions
     obs_space = env.observation_space.shape if obs == None else obs
 
@@ -252,7 +251,8 @@ def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
     score_history = []
 
     agent.load_models()
-    env.render(mode='human')
+    if show_model:
+        env.render(mode='human')
 
     for i in range(n_games):
         observation = env.reset()
@@ -260,10 +260,10 @@ def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
         score = 0
         steps = 0
         while not done:
-            env.render()
+            if show_model:
+                env.render()
             action = agent.choose_action(observation)
             observation_, reward, done, info = env.step(action)
-            agent.remember(observation, action, reward, observation_, done)
             steps += 1
             score += reward
             observation = observation_

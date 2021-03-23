@@ -43,7 +43,7 @@ If there were some reward very late in the game, SAC would have found it.
 # Check appendix for hyperparameters
 
 class CriticNetwork(nn.Module):
-    def __init__(self, beta, input_dims, n_actions, fc1_dims=256, fc2_dims=256,
+    def __init__(self, env_id, beta, input_dims, n_actions, fc1_dims=256, fc2_dims=256,
             name='critic', chkpt_dir='tmp/sac'):
         super(CriticNetwork, self).__init__()
         self.input_dims = input_dims
@@ -52,7 +52,7 @@ class CriticNetwork(nn.Module):
         self.n_actions = n_actions
         self.name = name
         self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_sac')
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, env_id + '_' + name + '_sac')
 
         self.fc1 = nn.Linear(self.input_dims[0]+n_actions, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
@@ -77,7 +77,7 @@ class CriticNetwork(nn.Module):
         self.load_state_dict(T.load(self.checkpoint_file))
 
 class ValueNetwork(nn.Module):
-    def __init__(self, beta, input_dims, fc1_dims=256, fc2_dims=256,
+    def __init__(self, env_id, beta, input_dims, fc1_dims=256, fc2_dims=256,
             name='value', chkpt_dir='tmp/sac'):
         super(ValueNetwork, self).__init__()
         self.input_dims = input_dims
@@ -85,7 +85,7 @@ class ValueNetwork(nn.Module):
         self.fc2_dims = fc2_dims
         self.name = name
         self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_sac')
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, env_id + '_' + name + '_sac')
 
         self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, fc2_dims)
@@ -110,7 +110,7 @@ class ValueNetwork(nn.Module):
         self.load_state_dict(T.load(self.checkpoint_file))
 
 class ActorNetwork(nn.Module):
-    def __init__(self, alpha, input_dims, max_action, fc1_dims=256,
+    def __init__(self, env_id, alpha, input_dims, max_action, fc1_dims=256,
             fc2_dims=256, n_actions=2, name='actor', chkpt_dir='tmp/sac'):
         super(ActorNetwork, self).__init__()
         self.input_dims = input_dims
@@ -119,7 +119,7 @@ class ActorNetwork(nn.Module):
         self.n_actions = n_actions
         self.name = name
         self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_sac')
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, env_id + '_' + name + '_sac')
         self.max_action = max_action
         self.reparam_noise = 1e-6
 
@@ -149,7 +149,7 @@ class ActorNetwork(nn.Module):
     def sample_normal(self, state, reparameterize=True):
         mu, sigma = self.forward(state)
         probabilities = Normal(mu, sigma)
-        
+
         if reparameterize:
             actions = probabilities.rsample()
         else:
@@ -177,14 +177,14 @@ class Agent():
         self.batch_size = batch_size
         self.n_actions = n_actions
 
-        self.actor = ActorNetwork(alpha, input_dims, n_actions=n_actions,
+        self.actor = ActorNetwork(env_id, alpha, input_dims, n_actions=n_actions,
                     name='actor', max_action=env.action_space.high)
-        self.critic_1 = CriticNetwork(beta, input_dims, n_actions=n_actions,
+        self.critic_1 = CriticNetwork(env_id, beta, input_dims, n_actions=n_actions,
                     name='critic_1')
-        self.critic_2 = CriticNetwork(beta, input_dims, n_actions=n_actions,
+        self.critic_2 = CriticNetwork(env_id, beta, input_dims, n_actions=n_actions,
                     name='critic_2')
-        self.value = ValueNetwork(beta, input_dims, name='value')
-        self.target_value = ValueNetwork(beta, input_dims, name='target_value')
+        self.value = ValueNetwork(env_id, beta, input_dims, name='value')
+        self.target_value = ValueNetwork(env_id, beta, input_dims, name='target_value')
 
         self.scale = reward_scale
         self.update_network_parameters(tau=1)
@@ -216,6 +216,7 @@ class Agent():
 
     def load_models(self):
         print('.... loading models ....')
+        print(self.actor)
         self.actor.load_checkpoint()
         self.value.load_checkpoint()
         self.target_value.load_checkpoint()
@@ -281,9 +282,9 @@ class Agent():
         self.update_network_parameters()
 #InvertedPendulumBulletEnv
 # seperate method for running the network so that it can be called from run_agents
-#def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=40000, run=2):
-#def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=2):
-def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=True, total_games=10, run=0):
+#def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', show_model=True, total_games=2, run=0):
+def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', show_model=True, total_games=2, run=0):
+#def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', show_model=False, total_games=100, run=0):
     env = gym.make(env_id)
     n_games = total_games
     total_actions = env.action_space.shape[0] if actions == None else actions
@@ -299,7 +300,8 @@ def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
     best_score = env.reward_range[0]
     score_history = []
     agent.load_models()
-    env.render(mode='human')
+    if show_model:
+        env.render(mode='human')
 
     for i in range(n_games):
         steps = 0
@@ -312,7 +314,8 @@ def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
             steps += 1
             score += reward
             observation = observation_
-            env.render()
+            if show_model:
+                env.render()
         score_history.append(score)
         avg_score = np.mean(score_history[-100:])
 
