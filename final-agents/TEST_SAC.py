@@ -73,9 +73,6 @@ class CriticNetwork(nn.Module):
 
         return q
 
-    def save_checkpoint(self):
-        T.save(self.state_dict(), self.checkpoint_file)
-
     def load_checkpoint(self):
         self.load_state_dict(T.load(self.checkpoint_file))
 
@@ -108,9 +105,6 @@ class ValueNetwork(nn.Module):
         v = self.v(state_value)
 
         return v
-
-    def save_checkpoint(self):
-        T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
         self.load_state_dict(T.load(self.checkpoint_file))
@@ -155,7 +149,7 @@ class ActorNetwork(nn.Module):
     def sample_normal(self, state, reparameterize=True):
         mu, sigma = self.forward(state)
         probabilities = Normal(mu, sigma)
-
+        
         if reparameterize:
             actions = probabilities.rsample()
         else:
@@ -166,10 +160,8 @@ class ActorNetwork(nn.Module):
         log_probs -= T.log(1-action.pow(2)+self.reparam_noise)
         log_probs = log_probs.sum(1, keepdim=True)
 
-        return action, log_probs
-
-    def save_checkpoint(self):
-        T.save(self.state_dict(), self.checkpoint_file)
+        return mu, log_probs
+        #return action, log_probs
 
     def load_checkpoint(self):
         self.load_state_dict(T.load(self.checkpoint_file))
@@ -221,14 +213,6 @@ class Agent():
                     (1-tau)*target_value_state_dict[name].clone()
 
         self.target_value.load_state_dict(value_state_dict)
-
-    def save_models(self):
-        print('.... saving models ....')
-        self.actor.save_checkpoint()
-        self.value.save_checkpoint()
-        self.target_value.save_checkpoint()
-        self.critic_1.save_checkpoint()
-        self.critic_2.save_checkpoint()
 
     def load_models(self):
         print('.... loading models ....')
@@ -299,10 +283,9 @@ class Agent():
 # seperate method for running the network so that it can be called from run_agents
 #def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=40000, run=2):
 #def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=2):
-def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=0):
+def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=True, total_games=10, run=0):
     env = gym.make(env_id)
     n_games = total_games
-    load_checkpoint = test_model
     total_actions = env.action_space.shape[0] if actions == None else actions
     obs_space = env.observation_space.shape if obs == None else obs
 
@@ -310,16 +293,13 @@ def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
                 input_dims=obs_space, tau=0.005,
                 env=env, batch_size=256, layer1_size=256, layer2_size=256,
                 n_actions=total_actions)
-    file = 'plots/sac_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games'
+    file = 'plots/sac_test_' + env_id + "_" + str(run)
     filename = file + '.png'
 
     best_score = env.reward_range[0]
     score_history = []
-    load_checkpoint = False
-
-    if load_checkpoint:
-        agent.load_models()
-        env.render(mode='human')
+    agent.load_models()
+    env.render(mode='human')
 
     for i in range(n_games):
         steps = 0
@@ -331,26 +311,17 @@ def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
             observation_, reward, done, info = env.step(action)
             steps += 1
             score += reward
-            agent.remember(observation, action, reward, observation_, done)
-            if not load_checkpoint:
-                agent.learn()
             observation = observation_
+            env.render()
         score_history.append(score)
         avg_score = np.mean(score_history[-100:])
 
-        #if avg_score > best_score:
-        #    best_score = avg_score
-        if i % 20 == 0:
-            if not load_checkpoint:
-                agent.save_models()
-
         print('episode {} score {} trailing 100 games avg {} steps {} env {}'.format(
             i, score, avg_score, steps, env_id))
-    if not load_checkpoint:
-        x = [i+1 for i in range(n_games)]
-        plot_learning_curve(x, score_history, filename)
-        df = pd.DataFrame(score_history)
-        df.to_csv(file + '.csv')
+    x = [i+1 for i in range(n_games)]
+    plot_learning_curve(x, score_history, filename)
+    df = pd.DataFrame(score_history)
+    df.to_csv(file + '.csv')
 
 # environments with large negative rewards don't work (e.g. LunarLander)
 if __name__ == '__main__':
