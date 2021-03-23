@@ -230,12 +230,11 @@ class DDPGAgent():
         #self.target_critic.load_state_dict(critic_state_dict, strict=False)
         #self.target_actor.load_state_dict(actor_state_dict, strict=False)
 
-#def ddpg_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=1):
-#def ddpg_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=0):
-def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=True, total_games=10, run=0):
+#def ddpg_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', view_model=True, total_games=10, run=0):
+def ddpg_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', view_model=False, total_games=10, run=0):
+#def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', view_model=True, total_games=10, run=0):
     env = gym.make(env_id)
     n_games = total_games
-    load_checkpoint = test_model
     total_actions = env.action_space.shape[0] if actions == None else actions
     obs_space = env.observation_space.shape if obs == None else obs
 
@@ -245,6 +244,8 @@ def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Tru
 
     best_score = env.reward_range[0]
     score_history = []
+    if view_model:
+        env.render(mode='human')
 
     for i in range(n_games):
         steps = 0
@@ -259,19 +260,20 @@ def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Tru
             steps += 1
             score += reward
             observation = observation_
+            if view_model:
+                env.render()
         score_history.append(score)
         avg_score = np.mean(score_history[-100:])
 
         print('episode {} score {} trailing 100 games avg {} steps {} env {}'.format(
             i, score, avg_score, steps, env_id))
 
-    if not load_checkpoint:
-        x = [i+1 for i in range(n_games)]
-        file = 'plots/ddpg_test_' + env_id + "_" + str(run)
-        filename = file + '.png'
-        plot_learning_curve(x, score_history, filename)
-        df = pd.DataFrame(score_history)
-        df.to_csv(file + '.csv')
+    x = [i+1 for i in range(n_games)]
+    file = 'plots/ddpg_test_' + env_id + "_" + str(run)
+    filename = file + '.png'
+    plot_learning_curve(x, score_history, filename)
+    df = pd.DataFrame(score_history)
+    df.to_csv(file + '.csv')
 
 if __name__ == "__main__":
     ddpg_run()

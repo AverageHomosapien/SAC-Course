@@ -234,8 +234,8 @@ class TD3Agent():
 
 # 20000 mountaincar games takes roughly 2 days + run for 3 networks to get zero'd results !!!!
 # seperate method for running the network so that it can be called from run_agents
-def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', show_model=False, total_games=10, run=0):
-#def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', show_model=False, total_games=10, run=0):
+#def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', show_model=False, total_games=10, run=0):
+def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', show_model=False, total_games=10, run=0):
 #def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', show_model=True, total_games=10, run=0):
     env = gym.make(env_id)
     n_games = total_games
@@ -273,13 +273,12 @@ def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', show_model=Fals
         print('episode {} score {} trailing 100 games avg {} steps {} env {}'.format(
             i, score, avg_score, steps, env_id))
 
-    if not load_checkpoint:
-        x = [i+1 for i in range(n_games)]
-        file = 'plots/td3_test_' + env_id + "_"+ str(run)
-        filename = file + '.png'
-        plot_learning_curve(x, score_history, filename)
-        df = pd.DataFrame(score_history)
-        df.to_csv(file + '.csv')
+    x = [i+1 for i in range(n_games)]
+    file = 'plots/td3_test_' + env_id + "_"+ str(run)
+    filename = file + '.png'
+    plot_learning_curve(x, score_history, filename)
+    df = pd.DataFrame(score_history)
+    df.to_csv(file + '.csv')
 
 
 if __name__ == '__main__':
