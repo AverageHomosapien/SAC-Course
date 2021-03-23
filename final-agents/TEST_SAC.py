@@ -216,7 +216,6 @@ class Agent():
 
     def load_models(self):
         print('.... loading models ....')
-        print(self.actor)
         self.actor.load_checkpoint()
         self.value.load_checkpoint()
         self.target_value.load_checkpoint()
@@ -283,8 +282,8 @@ class Agent():
 #InvertedPendulumBulletEnv
 # seperate method for running the network so that it can be called from run_agents
 #def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', show_model=True, total_games=2, run=0):
-def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', show_model=True, total_games=2, run=0):
-#def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', show_model=False, total_games=100, run=0):
+#def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', show_model=True, total_games=2, run=0):
+def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', show_model=False, total_games=100, run=1):
     env = gym.make(env_id)
     n_games = total_games
     total_actions = env.action_space.shape[0] if actions == None else actions
