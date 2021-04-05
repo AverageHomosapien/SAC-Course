@@ -1,9 +1,0 @@
-The only issue pre-update was the batch size, since the 
-network dimensions were explicitly specified in the agent
-running the experiments. Therefore results are valid,
-however:
-SAC was using batch size 256
-TD3 was using batch size 100
-DDPG was using batch size 64
-
-should be using 256
