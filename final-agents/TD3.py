@@ -1,5 +1,5 @@
 import os
-import pybullet_envs
+#import pybullet_envs
 import gym
 import numpy as np
 import pandas as pd
@@ -251,10 +251,9 @@ class TD3Agent():
 # seperate method for running the network so that it can be called from run_agents
 #def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=40000, run=2):
 #def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=2):
-def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=2):
+def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_games=2500, run=2):
     env = gym.make(env_id)
     n_games = total_games
-    load_checkpoint = test_model
     total_actions = env.action_space.shape[0] if actions == None else actions
     obs_space = env.observation_space.shape if obs == None else obs
 
@@ -265,10 +264,7 @@ def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
 
     best_score = env.reward_range[0]
     score_history = []
-
-    if load_checkpoint:
-        agent.load_models()
-        env.render(mode='human')
+    total_steps = []
 
     for i in range(n_games):
         observation = env.reset()
@@ -279,8 +275,7 @@ def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
             action = agent.choose_action(observation)
             observation_, reward, done, info = env.step(action)
             agent.remember(observation, action, reward, observation_, done)
-            if not load_checkpoint:
-                agent.learn()
+            agent.learn()
             steps += 1
             score += reward
             observation = observation_
@@ -290,19 +285,20 @@ def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_mode
         #if avg_score > best_score:
         #    best_score = avg_score
         if i % 20 == 0:
-            if not load_checkpoint:
-                agent.save_models()
+            agent.save_models()
 
         print('episode {} score {} trailing 100 games avg {} steps {} env {}'.format(
             i, score, avg_score, steps, env_id))
 
-    if not load_checkpoint:
-        x = [i+1 for i in range(n_games)]
-        file = 'plots/td3_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games'
-        filename = file + '.png'
-        plot_learning_curve(x, score_history, filename)
-        df = pd.DataFrame(score_history)
-        df.to_csv(file + '.csv')
+        total_steps.append(steps)
+
+    x = [i+1 for i in range(n_games)]
+    file = 'plots/td3_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games'
+    filename = file + '.png'
+    plot_learning_curve(x, score_history, filename)
+    zipped_list = list(zip(score_history, total_steps))
+    df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
+    df.to_csv(file + '.csv')
 
 
 if __name__ == '__main__':

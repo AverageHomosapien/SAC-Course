@@ -9,7 +9,7 @@ if __name__ == '__main__':
     #def ddpg_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=0):
     #def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=100000, run=1):
 
-    env = gym.make('MountainCarContinuous-v0')
+    env = gym.make('LunarLanderContinuous-v2')
     agent = Agent(alpha=0.0001, beta=0.001,
                     input_dims=env.observation_space.shape, tau=0.001,
                     batch_size=256, fc1_dims=256, fc2_dims=256,
@@ -36,8 +36,10 @@ if __name__ == '__main__':
         score_history.append(score)
         avg_score = np.mean(score_history[-100:])
 
-        if avg_score > best_score:
-            best_score = avg_score
+        #if avg_score > best_score:
+        #    best_score = avg_score
+			
+        if i % 20 == 0:
             agent.save_models()
 
         print('episode ', i, 'score %.1f' % score,

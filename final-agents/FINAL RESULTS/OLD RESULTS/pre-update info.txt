@@ -7,3 +7,9 @@ TD3 was using batch size 100
 DDPG was using batch size 64
 
 should be using 256
+_________________________
+Updated SAC due to it stagnating when training - issue with target network updating
+
+______
+TD3 (single result) and DDPG being updated again
+(Maybe need to check TD3 lander)
