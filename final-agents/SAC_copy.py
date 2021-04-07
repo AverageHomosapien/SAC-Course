@@ -297,12 +297,11 @@ class Agent():
         self.update_network_parameters()
 #InvertedPendulumBulletEnv
 # seperate method for running the network so that it can be called from run_agents
-def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=40000, run=3):
-#def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=2):
-#def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=0):
+#def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', total_games=40000, run=3):
+def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', total_games=20, run=2):
+#def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_games=20000, run=0):
     env = gym.make(env_id)
     n_games = total_games
-    load_checkpoint = test_model
     total_actions = env.action_space.shape[0] if actions == None else actions
     obs_space = env.observation_space.shape if obs == None else obs
 
@@ -315,11 +314,7 @@ def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Fals
 
     best_score = env.reward_range[0]
     score_history = []
-    load_checkpoint = False
-
-    if load_checkpoint:
-        agent.load_models()
-        env.render(mode='human')
+    total_steps = []
 
     for i in range(n_games):
         steps = 0
@@ -332,25 +327,24 @@ def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Fals
             steps += 1
             score += reward
             agent.remember(observation, action, reward, observation_, done)
-            if not load_checkpoint:
-                agent.learn()
+            agent.learn()
             observation = observation_
         score_history.append(score)
+        total_steps.append(steps)
         avg_score = np.mean(score_history[-100:])
 
         #if avg_score > best_score:
         #    best_score = avg_score
         if i % 20 == 0:
-            if not load_checkpoint:
-                agent.save_models()
+            agent.save_models()
 
         print('episode {} score {} trailing 100 games avg {} steps {} env {}'.format(
             i, score, avg_score, steps, env_id))
-    if not load_checkpoint:
-        x = [i+1 for i in range(n_games)]
-        plot_learning_curve(x, score_history, filename)
-        df = pd.DataFrame(score_history)
-        df.to_csv(file + '.csv')
+    x = [i+1 for i in range(n_games)]
+    plot_learning_curve(x, score_history, filename)
+    zipped_list = list(zip(score_history, total_steps))
+    df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
+    df.to_csv(file + '.csv')
 
 # environments with large negative rewards don't work (e.g. LunarLander)
 if __name__ == '__main__':
