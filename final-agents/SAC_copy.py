@@ -13,7 +13,7 @@ from utils import ReplayBuffer, plot_learning_curve
 
 """
 I noticed something interesting with SAC in the Lunar Lander environment -
-I let it play 2000 games with a batch size of 64 and reward scale of 2 (first try,
+I let it play 2000 games with a batch size of 64 and reward scd.cale of 2 (first try,
 I have not tuned either of these). It got up to an average score around 120 at
 the 900 game mark then slowly leaked down to 115 average by the 2000 mark.
 
@@ -298,14 +298,14 @@ class Agent():
 #InvertedPendulumBulletEnv
 # seperate method for running the network so that it can be called from run_agents
 #def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', total_games=40000, run=3):
-def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', total_games=20, run=2):
-#def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_games=20000, run=0):
+def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', total_games=20000, run=3):
+#def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_games=2500, run=0):
     env = gym.make(env_id)
     n_games = total_games
     total_actions = env.action_space.shape[0] if actions == None else actions
     obs_space = env.observation_space.shape if obs == None else obs
 
-    agent = Agent(alpha=0.0003, beta=0.0003, reward_scale=2, env_id=env_id,
+    agent = Agent(alpha=0.0003, beta=0.0003, reward_scale=4, env_id=env_id,
                 input_dims=obs_space, tau=0.005,
                 env=env, batch_size=256, layer1_size=256, layer2_size=256,
                 n_actions=total_actions)
