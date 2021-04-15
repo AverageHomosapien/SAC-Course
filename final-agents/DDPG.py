@@ -244,11 +244,12 @@ class DDPGAgent():
         #self.target_critic.load_state_dict(critic_state_dict, strict=False)
         #self.target_actor.load_state_dict(actor_state_dict, strict=False)
 
-#def ddpg_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_games=20000, run=1):
-#def ddpg_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_games=20000, run=0):
-def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_games=100000, run=1):
+#def ddpg_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_runs=150000, run=1):
+#def ddpg_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_runs=150000, run=0):
+def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_runs=150000, run=4):
     env = gym.make(env_id)
-    n_games = total_games
+    eval_env = gym.make(env_id)
+    runs = total_runs
     load_checkpoint = test_model
     total_actions = env.action_space.shape[0] if actions == None else actions
     obs_space = env.observation_space.shape if obs == None else obs
@@ -256,14 +257,16 @@ def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Fal
     agent = DDPGAgent(alpha=0.0001, beta=0.001, input_dims=obs_space,
                 tau=0.001, batch_size=256, fc1_dims=256, fc2_dims=256,
                 n_actions=total_actions, env_id=env_id)
+    file = 'plots/ddpg_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games'
+    file2 = 'plots/ddpg_eval_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games'
+
 
     best_score = env.reward_range[0]
     score_history = []
+    eval_steps = []
+    total_steps = 0
 
-    if load_checkpoint:
-        agent.save_models()
-
-    for i in range(n_games):
+    while True:
         steps = 0
         observation = env.reset()
         done = False
@@ -273,30 +276,34 @@ def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Fal
             action = agent.choose_action(observation)
             observation_, reward, done, info = env.step(action)
             agent.remember(observation, action, reward, observation_, done)
-            if not load_checkpoint:
-                agent.learn()
-            steps += 1
+            agent.learn()
+            total_steps += 1
             score += reward
             observation = observation_
-        score_history.append(score)
-        avg_score = np.mean(score_history[-100:])
-
-        #if avg_score > best_score:
-        #    best_score = avg_score
-        if i % 20 == 0:
-            if not load_checkpoint:
+            if total_steps % 1000 == 0: # Originally 100, up to 1000
+                eval_score = 0
+                eval_observation = eval_env.reset()
+                eval_done = False
+                eval_step_ct = 0
+                while not eval_done:
+                    eval_action = agent.choose_action(eval_observation, deterministic=True)
+                    eval_observation_, eval_reward, eval_done, eval_info = eval_env.step(eval_action)
+                    eval_score += eval_reward
+                    eval_observation = eval_observation_
+                    eval_step_ct += 1
+                score_history.append(eval_score)
+                eval_steps.append(eval_step_ct)
                 agent.save_models()
+                print('eval run {}, score {}, env {}'.format(eval_step_ct, eval_score, env_id))
+                zipped_list = list(zip(score_history, eval_steps))
+                df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
+                df.to_csv(file + '.csv')
+            if total_steps >= runs:
+                break
+    zipped_list = list(zip(score_history, eval_steps))
+    df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
+    df.to_csv(file + '.csv')
 
-        print('episode {} score {} trailing 100 games avg {} steps {} env {}'.format(
-        i, score, avg_score, steps, env_id))
-
-    if not load_checkpoint:
-        x = [i+1 for i in range(n_games)]
-        file = 'plots/ddpg_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games'
-        filename = file + '.png'
-        plot_learning_curve(x, score_history, filename)
-        df = pd.DataFrame(score_history)
-        df.to_csv(file + '.csv')
 
 if __name__ == "__main__":
     ddpg_run()
