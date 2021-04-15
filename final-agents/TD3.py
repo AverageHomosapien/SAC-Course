@@ -263,8 +263,8 @@ def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mode
             env=env, batch_size=256, layer1_size=256, layer2_size=256,
             n_actions=total_actions, env_id=env_id)
 
-    file = 'plots/td3_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games'
-    file2 = 'plots/td3_eval_' + env_id + "_"+ str(n_games) + '_run_' + str(run) + '_games'
+    file = 'plots/td3_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games'
+    file2 = 'plots/td3_eval_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games'
 
     best_score = env.reward_range[0]
     score_history = []

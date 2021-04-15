@@ -323,7 +323,7 @@ def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_run
     eval_scores = []
     eval_steps = []
 
-    for i in range(runs):
+    while True:
         steps = 0
         score = 0
         done = False
@@ -350,24 +350,25 @@ def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_run
                     eval_step_ct += 1
                 eval_scores.append(eval_score)
                 eval_steps.append(eval_step_ct)
+                agent.save_models()
+                zipped_list = list(zip(score_history, episode_steps))
+                df = pd.DataFrame(zipped_list, columns=['Stochastic Scores', 'Steps'])
+                df.to_csv(file + '.csv')
+                zipped_list2 = list(zip(eval_scores, eval_steps))
+                df2 = pd.DataFrame(zipped_list2, columns=['Eval Scores', 'Eval Steps'])
+                df2.to_csv(file2 + '.csv')
+                print('eval run {}, score {}, env {}'.format(eval_step_ct, eval_score, env_id))
 
         score_history.append(score)
         episode_steps.append(steps)
         avg_score = np.mean(score_history[-100:])
 
-        #if avg_score > best_score:
-        #    best_score = avg_score
-        if i % 20 == 0:
-            agent.save_models()
-
-        print('episode {} score {} trailing 100 games avg {} steps {} env {}'.format(
-            i, score, avg_score, steps, env_id))
-        zipped_list = list(zip(score_history, episode_steps))
-        df = pd.DataFrame(zipped_list, columns=['Stochastic Scores', 'Steps'])
-        df.to_csv(file + '.csv')
-        zipped_list2 = list(zip(eval_scores, eval_steps))
-        df2 = pd.DataFrame(zipped_list2, columns=['Eval Scores', 'Eval Steps'])
-        df2.to_csv(file2 + '.csv')
+    zipped_list = list(zip(score_history, episode_steps))
+    df = pd.DataFrame(zipped_list, columns=['Stochastic Scores', 'Steps'])
+    df.to_csv(file + '.csv')
+    zipped_list2 = list(zip(eval_scores, eval_steps))
+    df2 = pd.DataFrame(zipped_list2, columns=['Eval Scores', 'Eval Steps'])
+    df2.to_csv(file2 + '.csv')
 
 # environments with large negative rewards don't work (e.g. LunarLander)
 if __name__ == '__main__':
