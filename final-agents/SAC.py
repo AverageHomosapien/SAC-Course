@@ -301,15 +301,15 @@ class Agent():
 #InvertedPendulumBulletEnv
 # seperate method for running the network so that it can be called from run_agents
 #def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', total_runs=1000000, run=0):
-def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', total_runs=50000, run=5): #0.8 reward scale
-#def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_runs=150000, run=0):
+def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', total_runs=50000, run=6): #4 (0.8 reward scale), 6 is updated alpha and betas
+#def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_runs=500000, run=0):
     env = gym.make(env_id)
     eval_env = gym.make(env_id)
     runs = total_runs
     total_actions = env.action_space.shape[0] if actions == None else actions
     obs_space = env.observation_space.shape if obs == None else obs
 
-    agent = Agent(alpha=0.0003, beta=0.0003, reward_scale=1, env_id=env_id,
+    agent = Agent(alpha=0.0007, beta=0.0007, reward_scale=3, env_id=env_id,
                 input_dims=obs_space, tau=0.01, max_size=50000, gamma=0.999,
                 env=env, batch_size=512, layer1_size=64, layer2_size=64,
                 n_actions=total_actions)
@@ -317,59 +317,77 @@ def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', total_run
     file2 = 'plots/sac_eval_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games'
 
     best_score = env.reward_range[0]
-    score_history = []
-    episode_steps = []
-    step_count = 0
+    scores = []
+    steps = []
     eval_scores = []
     eval_steps = []
+    total_steps = 0 # tracking steps
+    eval_step = 0 # tracking evaluation steps
+    total_eval_steps = 150000 # total evaluation steps
 
     while True:
-        steps = 0
+        step = 0
         score = 0
         done = False
         observation = env.reset()
         while not done:
             action = agent.choose_action(observation)
             observation_, reward, done, info = env.step(action)
-            steps += 1
-            step_count += 1
-            score += reward
             agent.remember(observation, action, reward, observation_, done)
             agent.learn()
             observation = observation_
-            if step_count % 1000 == 0: # Originally 100, up to 1000
-                eval_score = 0
-                eval_observation = eval_env.reset()
-                eval_done = False
-                eval_step_ct = 0
-                while not eval_done:
-                    eval_action = agent.choose_action(eval_observation, deterministic=True)
-                    eval_observation_, eval_reward, eval_done, eval_info = eval_env.step(eval_action)
-                    eval_score += eval_reward
-                    eval_observation = eval_observation_
-                    eval_step_ct += 1
-                eval_scores.append(eval_score)
-                eval_steps.append(eval_step_ct)
-                agent.save_models()
-                zipped_list = list(zip(score_history, episode_steps))
-                df = pd.DataFrame(zipped_list, columns=['Stochastic Scores', 'Steps'])
-                df.to_csv(file + '.csv')
-                zipped_list2 = list(zip(eval_scores, eval_steps))
-                df2 = pd.DataFrame(zipped_list2, columns=['Eval Scores', 'Eval Steps'])
-                df2.to_csv(file2 + '.csv')
-                print('run {}, eval run {}, score {}, env {}'.format(step_count, eval_step_ct, eval_score, env_id))
-        score_history.append(score)
-        episode_steps.append(steps)
-        avg_score = np.mean(score_history[-100:])
-        if step_count >= runs:
-            break
+            score += reward
+            step += 1
+            total_steps += 1
 
-    zipped_list = list(zip(score_history, episode_steps))
-    df = pd.DataFrame(zipped_list, columns=['Stochastic Scores', 'Steps'])
-    df.to_csv(file + '.csv')
-    zipped_list2 = list(zip(eval_scores, eval_steps))
-    df2 = pd.DataFrame(zipped_list2, columns=['Eval Scores', 'Eval Steps'])
-    df2.to_csv(file2 + '.csv')
+            if total_steps % 10000 == 0:
+                print("current steps are {}, last score was {}".format(total_steps, scores[-1]))
+
+        scores.append(score)
+        steps.append(step)
+        if total_steps >= runs:
+            agent.save_models()
+            print('run {}, steps {}, score {}, env {}'.format(total_steps, step, score, env_id))
+            zipped_list = list(zip(scores, steps))
+            df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
+            df.to_csv(file + '.csv')
+            break
+        elif total_steps % 100 == 0: # Chance of saving on 200 steps
+            agent.save_models()
+            print('run {}, steps {}, score {}, env {}'.format(total_steps, step, score, env_id))
+            zipped_list = list(zip(scores, steps))
+            df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
+            df.to_csv(file + '.csv')
+
+    while True:
+        eval_score = 0
+        step = 0
+        eval_observation = eval_env.reset()
+        eval_done = False
+        while not eval_done:
+            eval_action = agent.choose_action(eval_observation)
+            eval_observation_, eval_reward, eval_done, eval_info = eval_env.step(eval_action, deterministic=True)
+            eval_score += eval_reward
+            eval_observation = eval_observation_
+            eval_step += 1
+            step += 1
+            if eval_step % 10000 == 0:
+                print("current steps are {}".format(total_steps))
+
+        eval_scores.append(eval_score)
+        eval_steps.append(step)
+
+        if eval_step >= total_eval_steps:
+            print('eval steps {}, score {}, env {}'.format(eval_step, eval_score, env_id))
+            zipped_list2 = list(zip(eval_scores, eval_steps))
+            df2 = pd.DataFrame(zipped_list2, columns=['Scores', 'Steps'])
+            df2.to_csv(file2 + '.csv')
+            break
+        elif eval_step % 100 == 0: # Chance of saving on 500 steps
+            print('eval steps {}, score {}, env {}'.format(eval_step, eval_score, env_id))
+            zipped_list2 = list(zip(eval_scores, eval_steps))
+            df2 = pd.DataFrame(zipped_list2, columns=['Scores', 'Steps'])
+            df2.to_csv(file2 + '.csv')
 
 # environments with large negative rewards don't work (e.g. LunarLander)
 if __name__ == '__main__':

@@ -139,7 +139,6 @@ class ActorNetwork(nn.Module):
 class DDPGAgent():
     def __init__(self, env_id, alpha, beta, input_dims, tau, n_actions, gamma=0.99,
                 max_size=1000000, fc1_dims=256, fc2_dims=256, batch_size=256):
-        print("agent fc1 dims {}, fc2 dims {}".format(fc1_dims, fc2_dims))
         self.gamma = gamma
         self.tau = tau
         self.batch_size = batch_size
@@ -245,9 +244,9 @@ class DDPGAgent():
         #self.target_critic.load_state_dict(critic_state_dict, strict=False)
         #self.target_actor.load_state_dict(actor_state_dict, strict=False)
 
-#def ddpg_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_runs=150000, run=3):
+#def ddpg_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', test_model=False, total_runs=150000, run=1):
 #def ddpg_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_runs=150000, run=0):
-def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_runs=1000000, run=2):
+def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_runs=150000, run=4):
     env = gym.make(env_id)
     eval_env = gym.make(env_id)
     runs = total_runs
@@ -255,28 +254,20 @@ def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Fal
     total_actions = env.action_space.shape[0] if actions == None else actions
     obs_space = env.observation_space.shape if obs == None else obs
 
-    layer1 = 400
-    layer2 = 300
-    batch=256
-
-    agent = DDPGAgent(alpha=0.0007, beta=0.0007, input_dims=obs_space,
-                tau=0.005, batch_size=batch, fc1_dims=layer1, fc2_dims=layer2,
-                n_actions=total_actions, env_id=env_id, max_size=1000000)
-    file = 'plots/ddpg_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games_' + str(layer1) + '_layer'
-    file2 = 'plots/ddpg_eval_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games_' + str(layer1) + '_layer'
+    agent = DDPGAgent(alpha=0.0001, beta=0.001, input_dims=obs_space,
+                tau=0.001, batch_size=256, fc1_dims=256, fc2_dims=256,
+                n_actions=total_actions, env_id=env_id)
+    file = 'plots/ddpg_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games'
+    file2 = 'plots/ddpg_eval_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games'
 
 
     best_score = env.reward_range[0]
-    scores = []
-    steps = []
-    eval_scores = []
+    score_history = []
     eval_steps = []
-    total_steps = 0 # tracking steps
-    eval_step = 0 # tracking evaluation steps
-    total_eval_steps = 150000 # total evaluation steps
+    total_steps = 0
 
     while True:
-        step = 0
+        steps = 0
         observation = env.reset()
         done = False
         score = 0
@@ -289,52 +280,29 @@ def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Fal
             total_steps += 1
             score += reward
             observation = observation_
-            step+=1
-        scores.append(score)
-        steps.append(step)
-        if total_steps >= runs:
-            agent.save_models()
-            print('run {}, steps {}, score {}, env {}'.format(total_steps, step, score, env_id))
-            zipped_list = list(zip(scores, steps))
-            df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
-            df.to_csv(file + '.csv')
-            break
-        elif total_steps % 100 == 0: # Chance of saving on 200 steps
-            agent.save_models()
-            print('run {}, steps {}, score {}, env {}'.format(total_steps, step, score, env_id))
-            zipped_list = list(zip(scores, steps))
-            df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
-            df.to_csv(file + '.csv')
-
-    while True:
-        eval_score = 0
-        step = 0
-        eval_observation = eval_env.reset()
-        eval_done = False
-        agent.noise.reset()
-        while not eval_done:
-            eval_action = agent.choose_action(eval_observation)
-            eval_observation_, eval_reward, eval_done, eval_info = eval_env.step(eval_action)
-            eval_score += eval_reward
-            eval_observation = eval_observation_
-            eval_step += 1
-            step += 1
-
-        eval_scores.append(eval_score)
-        eval_steps.append(step)
-
-        if eval_step >= total_eval_steps:
-            print('eval steps {}, score {}, env {}'.format(eval_step, eval_score, env_id))
-            zipped_list2 = list(zip(eval_scores, eval_steps))
-            df2 = pd.DataFrame(zipped_list2, columns=['Scores', 'Steps'])
-            df2.to_csv(file2 + '.csv')
-            break
-        elif eval_step % 100 == 0: # Chance of saving on 500 steps
-            print('eval steps {}, score {}, env {}'.format(eval_step, eval_score, env_id))
-            zipped_list2 = list(zip(eval_scores, eval_steps))
-            df2 = pd.DataFrame(zipped_list2, columns=['Scores', 'Steps'])
-            df2.to_csv(file2 + '.csv')
-
+            if total_steps % 1000 == 0: # Originally 100, up to 1000
+                eval_score = 0
+                eval_observation = eval_env.reset()
+                eval_done = False
+                eval_step_ct = 0
+                while not eval_done:
+                    eval_action = agent.choose_action(eval_observation)
+                    eval_observation_, eval_reward, eval_done, eval_info = eval_env.step(eval_action)
+                    eval_score += eval_reward
+                    eval_observation = eval_observation_
+                    eval_step_ct += 1
+                score_history.append(eval_score)
+                eval_steps.append(eval_step_ct)
+                agent.save_models()
+                print('runs {}, eval run {}, score {}, env {}'.format(total_steps, eval_step_ct, eval_score, env_id))
+                zipped_list = list(zip(score_history, eval_steps))
+                df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
+                df.to_csv(file + '.csv')
+            if total_steps >= runs:
+                break
+    zipped_list = list(zip(score_history, eval_steps))
+    df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
+    df.to_csv(file + '.csv')
 
 
 if __name__ == "__main__":

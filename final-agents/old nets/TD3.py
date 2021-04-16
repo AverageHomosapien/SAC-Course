@@ -249,41 +249,33 @@ class TD3Agent():
 
 # 20000 mountaincar games takes roughly 2 days + run for 3 networks to get zero'd results !!!!
 # seperate method for running the network so that it can be called from run_agents
-def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', total_runs=1000000, run=1):
-#def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', total_runs=300000, run=0):
-#def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_runs=300000, run=0):
+def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_runs=1000000, run=2):
+#def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_runs=150000, run=2):
+#def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_runs=150000, run=2):
     env = gym.make(env_id)
     eval_env = gym.make(env_id)
     runs = total_runs
     total_actions = env.action_space.shape[0] if actions == None else actions
     obs_space = env.observation_space.shape if obs == None else obs
-    
-    layer1 = 400
-    layer2 = 300
-    batch = 100
 
     agent = TD3Agent(alpha=0.001, beta=0.001,
-            input_dims=obs_space, tau=0.005, gamma=0.98, noise=0.1, max_size=200000,
-            env=env, batch_size=batch, layer1_size=layer1, layer2_size=layer2,
+            input_dims=obs_space, tau=0.005,
+            env=env, batch_size=100, layer1_size=400, layer2_size=300,
             n_actions=total_actions, env_id=env_id)
 
-    file = 'plots/td3_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games_' + str(layer1) + '_layer'
-    file2 = 'plots/td3_eval_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games_'  + str(layer1) + '_layer'
+    file = 'plots/td3_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games'
+    file2 = 'plots/td3_eval_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games'
 
     best_score = env.reward_range[0]
-    scores = []
-    steps = []
+    score_history = []
     eval_steps = []
-    eval_scores = []
     total_steps = 0
-    eval_step = 0
-    total_eval_steps = 150000
 
     while True:
         observation = env.reset()
         done = False
         score = 0
-        step = 0
+        steps = 0
         while not done:
             action = agent.choose_action(observation)
             observation_, reward, done, info = env.step(action)
@@ -292,53 +284,30 @@ def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', total_runs=1000
             total_steps += 1
             score += reward
             observation = observation_
-            step += 1
-        scores.append(score)
-        steps.append(step)
+            if total_steps % 1000 == 0: # Originally 100, up to 1000
+                eval_score = 0
+                eval_observation = eval_env.reset()
+                eval_done = False
+                eval_step_ct = 0
+                while not eval_done:
+                    eval_action = agent.choose_action(eval_observation)
+                    eval_observation_, eval_reward, eval_done, eval_info = eval_env.step(eval_action)
+                    eval_score += eval_reward
+                    eval_observation = eval_observation_
+                    eval_step_ct += 1
+                score_history.append(eval_score)
+                eval_steps.append(eval_step_ct)
+                agent.save_models()
+                print('runs {}, eval run {}, score {}, env {}'.format(total_steps, eval_step_ct, eval_score, env_id))
+                zipped_list = list(zip(score_history, eval_steps))
+                df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
+                df.to_csv(file + '.csv')
         if total_steps >= runs:
-            agent.save_models()
-            print('run {}, steps {}, score {}, env {}'.format(total_steps, step, score, env_id))
-            zipped_list = list(zip(scores, steps))
-            df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
-            df.to_csv(file + '.csv')
             break
-        elif total_steps % 100 == 0: # Chance of saving on 200 steps
-            agent.save_models()
-            print('run {}, steps {}, score {}, env {}'.format(total_steps, step, score, env_id))
-            zipped_list = list(zip(scores, steps))
-            df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
-            df.to_csv(file + '.csv')
-        
-        
-    
-    while True:
-        eval_score = 0
-        eval_observation = eval_env.reset()
-        eval_done = False
-        step = 0
-        
-        while not eval_done:
-            eval_action = agent.choose_action(eval_observation)
-            eval_observation_, eval_reward, eval_done, eval_info = eval_env.step(eval_action)
-            eval_score += eval_reward
-            eval_observation = eval_observation_
-            eval_step += 1
-            step += 1
-        
-        eval_scores.append(eval_score)
-        eval_steps.append(step)
-        
-        if eval_step >= total_eval_steps:
-            print('eval steps {}, score {}, env {}'.format(eval_step, eval_score, env_id))
-            zipped_list2 = list(zip(eval_scores, eval_steps))
-            df2 = pd.DataFrame(zipped_list2, columns=['Scores', 'Steps'])
-            df2.to_csv(file2 + '.csv')
-            break
-        elif eval_step % 100 == 0: # Chance of saving on 500 steps
-            print('eval steps {}, score {}, env {}'.format(eval_step, eval_score, env_id))
-            zipped_list2 = list(zip(eval_scores, eval_steps))
-            df2 = pd.DataFrame(zipped_list2, columns=['Scores', 'Steps'])
-            df2.to_csv(file2 + '.csv')
+
+    zipped_list = list(zip(score_history, eval_steps))
+    df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
+    df.to_csv(file + '.csv')
 
 
 if __name__ == '__main__':
