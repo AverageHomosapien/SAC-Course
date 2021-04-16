@@ -300,18 +300,18 @@ class Agent():
         self.update_network_parameters()
 #InvertedPendulumBulletEnv
 # seperate method for running the network so that it can be called from run_agents
-#def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', total_runs=150000, run=4):
-#def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', total_runs=150000, run=4):
-def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_runs=150000, run=4):
+#def sac_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', total_runs=1000000, run=0):
+def sac_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', total_runs=50000, run=5): #0.8 reward scale
+#def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_runs=150000, run=0):
     env = gym.make(env_id)
     eval_env = gym.make(env_id)
     runs = total_runs
     total_actions = env.action_space.shape[0] if actions == None else actions
     obs_space = env.observation_space.shape if obs == None else obs
 
-    agent = Agent(alpha=0.0003, beta=0.0003, reward_scale=5, env_id=env_id,
-                input_dims=obs_space, tau=0.005,
-                env=env, batch_size=256, layer1_size=256, layer2_size=256,
+    agent = Agent(alpha=0.0003, beta=0.0003, reward_scale=1, env_id=env_id,
+                input_dims=obs_space, tau=0.01, max_size=50000, gamma=0.999,
+                env=env, batch_size=512, layer1_size=64, layer2_size=64,
                 n_actions=total_actions)
     file = 'plots/sac_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games'
     file2 = 'plots/sac_eval_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games'
@@ -357,11 +357,12 @@ def sac_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_run
                 zipped_list2 = list(zip(eval_scores, eval_steps))
                 df2 = pd.DataFrame(zipped_list2, columns=['Eval Scores', 'Eval Steps'])
                 df2.to_csv(file2 + '.csv')
-                print('eval run {}, score {}, env {}'.format(eval_step_ct, eval_score, env_id))
-
+                print('run {}, eval run {}, score {}, env {}'.format(step_count, eval_step_ct, eval_score, env_id))
         score_history.append(score)
         episode_steps.append(steps)
         avg_score = np.mean(score_history[-100:])
+        if step_count >= runs:
+            break
 
     zipped_list = list(zip(score_history, episode_steps))
     df = pd.DataFrame(zipped_list, columns=['Stochastic Scores', 'Steps'])

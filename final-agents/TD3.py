@@ -1,5 +1,5 @@
 import os
-#import pybullet_envs
+import pybullet_envs
 import gym
 import numpy as np
 import pandas as pd
@@ -249,8 +249,8 @@ class TD3Agent():
 
 # 20000 mountaincar games takes roughly 2 days + run for 3 networks to get zero'd results !!!!
 # seperate method for running the network so that it can be called from run_agents
-#def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_runs=40000, run=2):
-def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_runs=150000, run=2):
+def td3_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=False, total_runs=1000000, run=2):
+#def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_model=False, total_runs=150000, run=2):
 #def td3_run(actions=None, obs=None, env_id='LunarLanderContinuous-v2', total_runs=150000, run=2):
     env = gym.make(env_id)
     eval_env = gym.make(env_id)
@@ -260,7 +260,7 @@ def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mode
 
     agent = TD3Agent(alpha=0.001, beta=0.001,
             input_dims=obs_space, tau=0.005,
-            env=env, batch_size=256, layer1_size=256, layer2_size=256,
+            env=env, batch_size=100, layer1_size=400, layer2_size=300,
             n_actions=total_actions, env_id=env_id)
 
     file = 'plots/td3_' + env_id + "_"+ str(total_runs) + '_run_' + str(run) + '_games'
@@ -290,7 +290,7 @@ def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mode
                 eval_done = False
                 eval_step_ct = 0
                 while not eval_done:
-                    eval_action = agent.choose_action(eval_observation, deterministic=True)
+                    eval_action = agent.choose_action(eval_observation)
                     eval_observation_, eval_reward, eval_done, eval_info = eval_env.step(eval_action)
                     eval_score += eval_reward
                     eval_observation = eval_observation_
@@ -298,12 +298,12 @@ def td3_run(actions=None, obs=None, env_id='MountainCarContinuous-v0', test_mode
                 score_history.append(eval_score)
                 eval_steps.append(eval_step_ct)
                 agent.save_models()
-                print('eval run {}, score {}, env {}'.format(eval_step_ct, eval_score, env_id))
+                print('runs {}, eval run {}, score {}, env {}'.format(total_steps, eval_step_ct, eval_score, env_id))
                 zipped_list = list(zip(score_history, eval_steps))
                 df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
                 df.to_csv(file + '.csv')
-            if total_steps >= runs:
-                break
+        if total_steps >= runs:
+            break
 
     zipped_list = list(zip(score_history, eval_steps))
     df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])

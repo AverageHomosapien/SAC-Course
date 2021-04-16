@@ -286,7 +286,7 @@ def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Fal
                 eval_done = False
                 eval_step_ct = 0
                 while not eval_done:
-                    eval_action = agent.choose_action(eval_observation, deterministic=True)
+                    eval_action = agent.choose_action(eval_observation)
                     eval_observation_, eval_reward, eval_done, eval_info = eval_env.step(eval_action)
                     eval_score += eval_reward
                     eval_observation = eval_observation_
@@ -294,7 +294,7 @@ def ddpg_run(actions=None, obs=None, env_id='HopperBulletEnv-v0', test_model=Fal
                 score_history.append(eval_score)
                 eval_steps.append(eval_step_ct)
                 agent.save_models()
-                print('eval run {}, score {}, env {}'.format(eval_step_ct, eval_score, env_id))
+                print('runs {}, eval run {}, score {}, env {}'.format(total_steps, eval_step_ct, eval_score, env_id))
                 zipped_list = list(zip(score_history, eval_steps))
                 df = pd.DataFrame(zipped_list, columns=['Scores', 'Steps'])
                 df.to_csv(file + '.csv')
