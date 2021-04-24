@@ -1,2 +1,2 @@
 # SAC-Course
- Implementations of the code in Phil's SAC Udemy Course
+ Continuous acctor-critic implementations based on Phil Tabor's SAC Udemy Course
